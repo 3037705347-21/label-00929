@@ -190,8 +190,77 @@
                     </div>
                 </div>
 
+                <!-- 趋势图表 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">数据趋势</h3>
+                        <div class="chart-controls">
+                            <select id="trendPeriod" onchange="loadTrendCharts()">
+                                <option value="day">按日</option>
+                                <option value="week" selected>按周</option>
+                                <option value="month">按月</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-3">
+                        <div style="padding: 1rem;">
+                            <h4 style="margin-bottom: 1rem; color: #334155;">用户注册量</h4>
+                            <canvas id="usersChart" height="200"></canvas>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <h4 style="margin-bottom: 1rem; color: #334155;">任务发布量</h4>
+                            <canvas id="tasksChart" height="200"></canvas>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <h4 style="margin-bottom: 1rem; color: #334155;">交易额趋势</h4>
+                            <canvas id="transactionChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 用户分布和财务概览 -->
                 <div class="dashboard-bottom-row mb-lg">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">用户增长漏斗</h3>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <canvas id="funnelChart" height="250"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">平台 GMV & 服务费收入</h3>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <canvas id="gmvChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 数据导出 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">数据导出</h3>
+                    </div>
+                    <div class="quick-actions">
+                        <a href="javascript:exportData('transactions')" class="quick-action-item">
+                            <span class="quick-action-icon">📊</span>
+                            <span>交易流水</span>
+                        </a>
+                        <a href="javascript:exportData('orders')" class="quick-action-item">
+                            <span class="quick-action-icon">📦</span>
+                            <span>订单列表</span>
+                        </a>
+                        <a href="javascript:exportData('withdrawals')" class="quick-action-item">
+                            <span class="quick-action-icon">💳</span>
+                            <span>提现记录</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 原用户分布卡片 -->
+                <div style="display: none;">
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title">用户分布</h3>
@@ -244,8 +313,9 @@
         </main>
     </div>
 
-    <script src="/assets/js/common.js"></script>
-    <script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/assets/js/common.js"></script>
+<script>
         // 检查管理员权限
         const user = getUser();
         if (!user || user.user_type != 3) {
@@ -354,6 +424,181 @@
 
         loadDashboard();
         loadPendingCounts();
+        loadTrendCharts();
+
+        // 趋势图表
+        let usersChart, tasksChart, transactionChart, funnelChart, gmvChart;
+
+        async function loadTrendCharts() {
+            const period = document.getElementById('trendPeriod').value;
+            try {
+                const res = await get('/admin/reports/trends', { period });
+                if (res.code === 0) {
+                    const { users, tasks, transactions, gmv, funnel } = res.data;
+                    renderUsersChart(users);
+                    renderTasksChart(tasks);
+                    renderTransactionChart(transactions);
+                    renderFunnelChart(funnel);
+                    renderGmvChart(gmv);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderUsersChart(data) {
+            const ctx = document.getElementById('usersChart').getContext('2d');
+            if (usersChart) usersChart.destroy();
+            if (!data || !data.values || data.values.every(v => v === 0 || v === null || v === undefined)) {
+                usersChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: ['暂无数据'], datasets: [{ label: '注册用户', data: [0], borderColor: '#3B82F6' }] },
+                    options: { responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: () => '暂无数据，请稍后再查' } } } }
+                });
+                return;
+            }
+            usersChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: '注册用户',
+                        data: data.values,
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function renderTasksChart(data) {
+            const ctx = document.getElementById('tasksChart').getContext('2d');
+            if (tasksChart) tasksChart.destroy();
+            if (!data || !data.values || data.values.every(v => v === 0 || v === null || v === undefined)) {
+                tasksChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: ['暂无数据'], datasets: [{ label: '发布任务', data: [0], backgroundColor: '#10B981' }] },
+                    options: { responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: () => '暂无数据，请稍后再查' } } } }
+                });
+                return;
+            }
+            tasksChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: '发布任务',
+                        data: data.values,
+                        backgroundColor: '#10B981'
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function renderTransactionChart(data) {
+            const ctx = document.getElementById('transactionChart').getContext('2d');
+            if (transactionChart) transactionChart.destroy();
+            if (!data || !data.values || data.values.every(v => v === 0 || v === null || v === undefined)) {
+                transactionChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: ['暂无数据'], datasets: [{ label: '交易额', data: [0], borderColor: '#8B5CF6' }] },
+                    options: { responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: () => '暂无数据，请稍后再查' } } } }
+                });
+                return;
+            }
+            transactionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: '交易额',
+                        data: data.values,
+                        borderColor: '#8B5CF6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        fill: true
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function renderFunnelChart(data) {
+            const ctx = document.getElementById('funnelChart').getContext('2d');
+            if (funnelChart) funnelChart.destroy();
+            if (!data || !data.values || data.values.every(v => v === 0 || v === null || v === undefined)) {
+                funnelChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: ['暂无数据'], datasets: [{ label: '用户数', data: [0], backgroundColor: '#3B82F6' }] },
+                    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: () => '暂无数据，请稍后再查' } } } }
+                });
+                return;
+            }
+            funnelChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: '用户数',
+                        data: data.values,
+                        backgroundColor: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444']
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderGmvChart(data) {
+            const ctx = document.getElementById('gmvChart').getContext('2d');
+            if (gmvChart) gmvChart.destroy();
+            if (!data || !data.gmv_values || !data.fee_values ||
+                (data.gmv_values.every(v => v === 0 || v === null || v === undefined) &&
+                 data.fee_values.every(v => v === 0 || v === null || v === undefined))) {
+                gmvChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: ['暂无数据'], datasets: [{ label: 'GMV', data: [0], borderColor: '#3B82F6' }] },
+                    options: { responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: () => '暂无数据，请稍后再查' } } } }
+                });
+                return;
+            }
+            gmvChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: 'GMV',
+                            data: data.gmv_values,
+                            borderColor: '#3B82F6',
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '服务费收入',
+                            data: data.fee_values,
+                            borderColor: '#10B981',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { type: 'linear', position: 'left' },
+                        y1: { type: 'linear', position: 'right' }
+                    }
+                }
+            });
+        }
+
+        function exportData(type) {
+            downloadFile(`/api/admin/report/export?type=${type}`);
+        }
 
         // 侧边栏切换
         function toggleSidebar() {

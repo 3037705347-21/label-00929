@@ -138,6 +138,57 @@
                     </div>
                 </div>
 
+                <!-- 达人数据分析 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">收益趋势</h3>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <canvas id="earningsChart" height="200"></canvas>
+                    </div>
+                </div>
+
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">作品数据分析</h3>
+                    </div>
+                    <div class="grid grid-3">
+                        <div style="padding: 1rem;">
+                            <h4 style="margin-bottom: 1rem; color: #334155;">播放量</h4>
+                            <canvas id="viewsChart" height="150"></canvas>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <h4 style="margin-bottom: 1rem; color: #334155;">点赞互动</h4>
+                            <canvas id="likesChart" height="150"></canvas>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <h4 style="margin-bottom: 1rem; color: #334155;">转化率</h4>
+                            <canvas id="conversionChart" height="150"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 数据导出 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">数据导出</h3>
+                    </div>
+                    <div class="quick-actions">
+                        <a href="javascript:exportInfluencerData('orders')" class="quick-action-item">
+                            <span class="quick-action-icon">📦</span>
+                            <span>接单列表</span>
+                        </a>
+                        <a href="javascript:exportInfluencerData('earnings')" class="quick-action-item">
+                            <span class="quick-action-icon">💰</span>
+                            <span>收益明细</span>
+                        </a>
+                        <a href="javascript:exportInfluencerData('works')" class="quick-action-item">
+                            <span class="quick-action-icon">🎨</span>
+                            <span>作品数据</span>
+                        </a>
+                    </div>
+                </div>
+
                 <!-- 我的订单 -->
                 <div class="card">
                     <div class="card-header">
@@ -167,8 +218,9 @@
         </main>
     </div>
 
-    <script src="/assets/js/common.js"></script>
-    <script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/assets/js/common.js"></script>
+<script>
         // 加载用户信息和统计
         async function loadDashboard() {
             try {
@@ -321,6 +373,127 @@
         loadDashboard();
         loadRecommendTasks();
         loadRecentOrders();
+        loadInfluencerCharts();
+
+        let earningsChart, viewsChart, likesChart, conversionChart;
+
+        async function loadInfluencerCharts() {
+            try {
+                const res = await get('/influencer/reports/analytics');
+                if (res.code === 0) {
+                    const { earnings, works_stats } = res.data;
+                    renderEarningsChart(earnings);
+                    renderViewsChart(works_stats.views);
+                    renderLikesChart(works_stats.likes);
+                    renderConversionChart(works_stats.conversion);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderEarningsChart(data) {
+            const ctx = document.getElementById('earningsChart').getContext('2d');
+            if (!data || !data.values || data.values.every(v => v === 0 || v === null || v === undefined)) {
+                earningsChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: ['暂无数据'], datasets: [{ label: '收益', data: [0], borderColor: '#10B981' }] },
+                    options: { responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: () => '暂无数据，请稍后再查' } } } } }
+                });
+                return;
+            }
+            earningsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: '收益',
+                        data: data.values,
+                        borderColor: '#10B981',
+                        fill: true,
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)'
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function renderViewsChart(data) {
+            const ctx = document.getElementById('viewsChart').getContext('2d');
+            if (!data || !data.values || data.values.every(v => v === 0 || v === null || v === undefined)) {
+                viewsChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: ['暂无数据'], datasets: [{ label: '播放量', data: [0], backgroundColor: '#3B82F6' }] },
+                    options: { responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: () => '暂无数据，请稍后再查' } } } } }
+                });
+                return;
+            }
+            viewsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: '播放量',
+                        data: data.values,
+                        backgroundColor: '#3B82F6'
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function renderLikesChart(data) {
+            const ctx = document.getElementById('likesChart').getContext('2d');
+            if (!data || !data.values || data.values.every(v => v === 0 || v === null || v === undefined)) {
+                likesChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: ['暂无数据'], datasets: [{ label: '点赞', data: [0], backgroundColor: '#EC4899' }] },
+                    options: { responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: () => '暂无数据，请稍后再查' } } } } }
+                });
+                return;
+            }
+            likesChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: '点赞',
+                        data: data.values,
+                        backgroundColor: '#EC4899'
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function renderConversionChart(data) {
+            const ctx = document.getElementById('conversionChart').getContext('2d');
+            if (!data || !data.values || data.values.every(v => v === 0 || v === null || v === undefined)) {
+                conversionChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: ['暂无数据'], datasets: [{ label: '转化率', data: [0], borderColor: '#F59E0B' }] },
+                    options: { responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: () => '暂无数据，请稍后再查' } } } } }
+                });
+                return;
+            }
+            conversionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: '转化率',
+                        data: data.values,
+                        borderColor: '#F59E0B',
+                        fill: true
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function exportInfluencerData(type) {
+            downloadFile(`/api/influencer/report/export?type=${type}`);
+        }
 
         // 侧边栏切换
         function toggleSidebar() {

@@ -918,4 +918,163 @@ class AdminController extends Controller
             return Response::error($e->getMessage(), $e->getCode() ?: 400);
         }
     }
+
+    /**
+     * 获取趋势数据
+     */
+    public function getTrends(): Response
+    {
+        try {
+            $this->requireRole(User::TYPE_ADMIN);
+            
+            $period = $this->request->get('period', 'day');
+            $days = $period === 'day' ? 7 : ($period === 'week' ? 28 : 90);
+            
+            $userModel = new User();
+            $taskModel = new Task();
+            $orderModel = new TaskOrder();
+            $transModel = new Transaction();
+            
+            $result = [
+                'user_registrations' => $this->getTrendData('users', 'created_at', $days),
+                'task_releases' => $this->getTrendData('tasks', 'created_at', $days),
+                'transaction_volume' => $this->getTrendData('transactions', 'created_at', $days, 'amount'),
+                'gmv' => $this->getTrendData('task_orders', 'created_at', $days, 'reward'),
+                'service_fee_income' => $this->getTrendData('transactions', 'created_at', $days, 'fee'),
+            ];
+            
+            return Response::success($result);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 获取漏斗数据
+     */
+    public function getFunnel(): Response
+    {
+        try {
+            $this->requireRole(User::TYPE_ADMIN);
+            
+            $userModel = new User();
+            $merchantModel = new Merchant();
+            $influencerModel = new Influencer();
+            $taskModel = new Task();
+            $orderModel = new TaskOrder();
+            
+            $funnel = [
+                ['name' => '访问用户', 'value' => $userModel->count()],
+                ['name' => '注册用户', 'value' => $userModel->count()],
+                ['name' => '认证商家', 'value' => $merchantModel->count(['verify_status' => 1])],
+                ['name' => '认证达人', 'value' => $influencerModel->count(['verify_status' => 1])],
+                ['name' => '发布任务', 'value' => $taskModel->count(['status >' => 0])],
+                ['name' => '完成订单', 'value' => $orderModel->count(['status' => 4])],
+            ];
+            
+            return Response::success($funnel);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 导出报表
+     */
+    public function exportReport()
+    {
+        try {
+            $this->requireRole(User::TYPE_ADMIN);
+            
+            $type = $this->param('type');
+            $format = $this->request->get('format', 'csv');
+            
+            switch ($type) {
+                case 'transactions':
+                    $data = (new Transaction())->getAll();
+                    $headers = ['ID', '用户ID', '类型', '金额', '创建时间'];
+                    $fields = ['id', 'user_id', 'type', 'amount', 'created_at'];
+                    break;
+                case 'orders':
+                    $data = (new TaskOrder())->getAll();
+                    $headers = ['ID', '任务ID', '达人ID', '奖励', '状态', '创建时间'];
+                    $fields = ['id', 'task_id', 'influencer_id', 'reward', 'status', 'created_at'];
+                    break;
+                case 'withdrawals':
+                    $data = (new Withdrawal())->getAll();
+                    $headers = ['ID', '用户ID', '金额', '手续费', '状态', '创建时间'];
+                    $fields = ['id', 'user_id', 'amount', 'fee', 'status', 'created_at'];
+                    break;
+                default:
+                    throw new \Exception('未知的导出类型');
+            }
+            
+            if ($format === 'csv') {
+                return $this->exportCSV($type, $headers, $fields, $data);
+            } else {
+                return $this->exportExcel($type, $headers, $fields, $data);
+            }
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    private function getTrendData($table, $dateField, $days, $sumField = null)
+    {
+        $db = \Core\Database::getInstance();
+        $sql = "SELECT DATE({$dateField}) as date, " . 
+               ($sumField ? "SUM({$sumField}) as value" : "COUNT(*) as value") . 
+               " FROM {$table} WHERE {$dateField} >= DATE_SUB(NOW(), INTERVAL {$days} DAY) GROUP BY DATE({$dateField}) ORDER BY date ASC";
+        $rows = $db->fetchAll($sql);
+        
+        $labels = [];
+        $values = [];
+        foreach ($rows as $row) {
+            $labels[] = $row['date'];
+            $values[] = (float) $row['value'];
+        }
+        
+        return ['labels' => $labels, 'values' => $values];
+    }
+
+    private function exportCSV($filename, $headers, $fields, $data)
+    {
+        header('Content-Type: text/csv; charset=utf-8');
+        header("Content-Disposition: attachment; filename={$filename}.csv");
+        
+        $output = fopen('php://output', 'w');
+        fwrite($output, "\xEF\xBB\xBF");
+        fputcsv($output, $headers);
+        
+        foreach ($data as $row) {
+            $line = [];
+            foreach ($fields as $field) {
+                $line[] = $row[$field] ?? '';
+            }
+            fputcsv($output, $line);
+        }
+        
+        fclose($output);
+        exit;
+    }
+
+    private function exportExcel($filename, $headers, $fields, $data)
+    {
+        header('Content-Type: application/vnd.ms-excel');
+        header("Content-Disposition: attachment; filename={$filename}.xls");
+        
+        echo '<table border="1">';
+        echo '<tr><th>' . implode('</th><th>', $headers) . '</th></tr>';
+        
+        foreach ($data as $row) {
+            echo '<tr>';
+            foreach ($fields as $field) {
+                echo '<td>' . ($row[$field] ?? '') . '</td>';
+            }
+            echo '</tr>';
+        }
+        
+        echo '</table>';
+        exit;
+    }
 }
