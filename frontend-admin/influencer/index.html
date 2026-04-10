@@ -100,6 +100,45 @@
                     </div>
                 </div>
 
+                <!-- 数据深度分析 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">📊 数据深度分析</h3>
+                        <div class="card-tools">
+                            <select id="trendPeriod" class="form-control form-control-sm" style="width: auto;" onchange="loadInfluencerCharts()">
+                                <option value="day">按日</option>
+                                <option value="week" selected>按周</option>
+                                <option value="month">按月</option>
+                            </select>
+                            <button onclick="exportInfluencerData()" class="btn btn-sm btn-primary ml-sm">
+                                <span>📥</span> 导出报表
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid grid-2 gap-lg">
+                            <div>
+                                <h4 class="chart-title">💰 收益趋势</h4>
+                                <div class="chart-container">
+                                    <canvas id="earningsTrendChart"></canvas>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="chart-title">📈 订单完成趋势</h4>
+                                <div class="chart-container">
+                                    <canvas id="ordersTrendChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-lg">
+                            <h4 class="chart-title">🎬 作品数据分析（播放量/点赞量/转化率）</h4>
+                            <div class="chart-container" style="height: 300px;">
+                                <canvas id="contentAnalyticsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 快捷操作 -->
                 <div class="card mb-lg">
                     <div class="card-header">
@@ -317,10 +356,140 @@
             `).join('');
         }
 
+        // 图表实例
+        let influencerCharts = {};
+
+        // 加载达人图表数据
+        async function loadInfluencerCharts() {
+            try {
+                await loadChartJS();
+
+                const period = document.getElementById('trendPeriod').value;
+                const res = await get('/influencer/dashboard/analytics', { period });
+
+                if (res.code !== 0 || !res.data) {
+                    return;
+                }
+
+                const { earnings_trend, orders_trend, content_analytics } = res.data;
+
+                Object.values(influencerCharts).forEach(chart => chart.destroy());
+
+                influencerCharts.earnings = await createTrendChart('earningsTrendChart', {
+                    title: '收益趋势',
+                    labels: earnings_trend.labels,
+                    datasets: [{
+                        label: '收益（元）',
+                        data: earnings_trend.data,
+                        borderColor: '#10B981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }],
+                    type: 'line'
+                });
+
+                influencerCharts.orders = await createTrendChart('ordersTrendChart', {
+                    title: '订单完成趋势',
+                    labels: orders_trend.labels,
+                    datasets: [{
+                        label: '完成订单',
+                        data: orders_trend.data,
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }],
+                    type: 'line'
+                });
+
+                influencerCharts.content = new Chart(document.getElementById('contentAnalyticsChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: content_analytics.labels,
+                        datasets: [
+                            {
+                                label: '播放量',
+                                data: content_analytics.views,
+                                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: '点赞量',
+                                data: content_analytics.likes,
+                                backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: '转化率（%）',
+                                data: content_analytics.conversion_rates,
+                                backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                                yAxisID: 'y1',
+                                type: 'line'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: { display: true, text: '数量' }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: { display: true, text: '转化率 %' },
+                                grid: { drawOnChartArea: false },
+                                min: 0,
+                                max: 20
+                            }
+                        },
+                        plugins: {
+                            legend: { position: 'top' }
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error('加载图表失败:', err);
+            }
+        }
+
+        async function exportInfluencerData() {
+            try {
+                showLoading();
+                const period = document.getElementById('trendPeriod').value;
+                const res = await get('/influencer/dashboard/analytics/export', { period });
+
+                if (res.code === 0 && res.data) {
+                    const data = res.data;
+                    let csvContent = '日期,收益(元),完成订单数,播放量,点赞量,转化率(%)\n';
+                    data.forEach(row => {
+                        csvContent += `${row.date},${row.earnings},${row.orders},${row.views},${row.likes},${row.conversion_rate}\n`;
+                    });
+                    exportToCSV(csvContent, `达人数据报表_${new Date().toLocaleDateString()}`);
+                }
+            } catch (err) {
+                console.error('导出失败:', err);
+                showToast('导出失败', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
         // 初始化
         loadDashboard();
         loadRecommendTasks();
         loadRecentOrders();
+        loadInfluencerCharts();
 
         // 侧边栏切换
         function toggleSidebar() {

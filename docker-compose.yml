@@ -2,7 +2,7 @@ services:
   # MySQL 数据库
   mysql:
     image: mysql:8.0
-    container_name: tandianda-mysql
+    container_name: tandianda-mysql-a
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root123
@@ -11,7 +11,7 @@ services:
       MYSQL_COLLATION: utf8mb4_unicode_ci
       TZ: Asia/Shanghai
     ports:
-      - "3306:3306"
+      - "33060:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -29,7 +29,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: tandianda-backend
+    container_name: tandianda-backend-a
     restart: unless-stopped
     environment:
       DB_HOST: mysql
@@ -53,10 +53,10 @@ services:
     build:
       context: ./frontend-admin
       dockerfile: Dockerfile
-    container_name: tandianda-frontend
+    container_name: tandianda-frontend-a
     restart: unless-stopped
     ports:
-      - "8081:80"
+      - "8082:80"
     depends_on:
       - backend
     networks:

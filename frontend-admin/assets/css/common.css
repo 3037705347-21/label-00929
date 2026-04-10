@@ -1031,6 +1031,119 @@ textarea.form-control {
 .chat-messages {
     flex: 1;
     overflow-y: auto;
+}
+
+/* ============================================
+   图表容器响应式样式
+   ============================================ */
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 250px;
+    margin: 0 auto;
+}
+
+.chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+@media (min-width: 768px) {
+    .chart-container {
+        height: 300px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .chart-container {
+        height: 350px;
+    }
+}
+
+/* 漏斗图容器 */
+.funnel-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+}
+
+.funnel-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    margin: 4px 0;
+    background: linear-gradient(90deg, var(--primary-light) 0%, var(--primary-color) 100%);
+    color: white;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.funnel-item:nth-child(1) { width: 100%; }
+.funnel-item:nth-child(2) { width: 85%; }
+.funnel-item:nth-child(3) { width: 70%; }
+.funnel-item:nth-child(4) { width: 55%; }
+.funnel-item:nth-child(5) { width: 40%; }
+
+.funnel-label {
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.funnel-value {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* 时间选择器按钮组 */
+.time-period-group {
+    display: flex;
+    gap: 4px;
+}
+
+.time-period-btn {
+    padding: 4px 12px;
+    font-size: 12px;
+    border: 1px solid var(--border-color);
+    background: white;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-secondary);
+}
+
+.time-period-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.time-period-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+/* 导出按钮 */
+.export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-secondary);
+}
+
+.export-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: var(--primary-light);
+}
     padding: var(--spacing-md);
     background: #f5f7fa;
     border-radius: var(--radius-md);

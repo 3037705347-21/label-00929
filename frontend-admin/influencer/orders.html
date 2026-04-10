@@ -63,6 +63,9 @@
                             <option value="7">已取消</option>
                         </select>
                         <button class="btn btn-primary" onclick="loadOrders()">搜索</button>
+                        <button class="btn btn-secondary ml-auto" onclick="exportOrdersCSV()">
+                            <span>📥</span> 导出订单
+                        </button>
                     </div>
                 </div>
 
@@ -511,6 +514,44 @@
             } catch (err) {
                 showToast('发送失败', 'error');
             }
+        }
+
+        async function exportOrdersCSV() {
+            try {
+                showLoading();
+                const status = document.getElementById('filterStatus').value;
+                const res = await get('/influencer/orders/export', { status });
+
+                if (res.code === 0 && res.data) {
+                    const orders = res.data;
+                    const headers = ['订单号', '任务名称', '商家', '佣金', '实际收入', '状态', '报名时间', '完成时间'];
+                    const data = orders.map(o => [
+                        o.order_no,
+                        o.task_title,
+                        o.shop_name,
+                        o.commission_amount,
+                        o.final_commission,
+                        getOrderStatusText(o.status),
+                        formatDate(o.applied_at),
+                        formatDate(o.completed_at)
+                    ]);
+                    exportToCSV({ headers, data }, `达人订单_${new Date().toLocaleDateString()}`);
+                } else {
+                    showToast(res.message || '导出失败', 'error');
+                }
+            } catch (err) {
+                showToast('导出失败', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function getOrderStatusText(status) {
+            const map = {
+                1: '已报名', 2: '已接单', 3: '执行中', 4: '待审核',
+                5: '已完成', 6: '已拒绝', 7: '已取消'
+            };
+            return map[status] || '未知';
         }
 
         // 初始化

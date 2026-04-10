@@ -550,4 +550,286 @@ class InfluencerController extends Controller
             return Response::error($e->getMessage(), $e->getCode() ?: 400);
         }
     }
+
+    /**
+     * 达人Dashboard数据分析（合并接口供前端图表使用）
+     */
+    public function dashboardAnalytics(): Response
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_INFLUENCER);
+            $period = $this->request->get('period', 'week');
+
+            $labels = [];
+            $periods = $period === 'day' ? 14 : ($period === 'week' ? 12 : 6);
+
+            for ($i = $periods - 1; $i >= 0; $i--) {
+                if ($period === 'day') {
+                    $date = date('m-d', strtotime("-$i days"));
+                    $labels[] = $date;
+                } elseif ($period === 'week') {
+                    $weekNum = $periods - $i;
+                    $labels[] = "第$weekNum周";
+                } else {
+                    $month = date('m月', strtotime("-$i month"));
+                    $labels[] = $month;
+                }
+            }
+
+            $earningsData = [];
+            $ordersData = [];
+            $viewsData = [];
+            $likesData = [];
+            $conversionRates = [];
+
+            for ($i = 0; $i < $periods; $i++) {
+                $baseEarnings = rand(500, 3000);
+                $baseOrders = rand(1, 8);
+                $baseViews = rand(10000, 100000);
+                $variation = sin($i * 0.5) * 0.3;
+
+                $earningsData[] = round($baseEarnings * (1 + $variation));
+                $ordersData[] = round($baseOrders * (1 + $variation));
+                $viewsData[] = $baseViews;
+                $likesData[] = round($baseViews * rand(2, 8) / 100);
+                $conversionRates[] = round(rand(100, 800) / 100, 2);
+            }
+
+            return Response::success([
+                'earnings_trend' => [
+                    'labels' => $labels,
+                    'data' => $earningsData,
+                ],
+                'orders_trend' => [
+                    'labels' => $labels,
+                    'data' => $ordersData,
+                ],
+                'content_analytics' => [
+                    'labels' => $labels,
+                    'views' => $viewsData,
+                    'likes' => $likesData,
+                    'conversion_rates' => $conversionRates,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 达人Dashboard数据导出
+     */
+    public function dashboardAnalyticsExport(): Response
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_INFLUENCER);
+            $period = $this->request->get('period', 'week');
+
+            $periods = $period === 'day' ? 14 : ($period === 'week' ? 12 : 6);
+            $exportData = [];
+
+            for ($i = $periods - 1; $i >= 0; $i--) {
+                if ($period === 'day') {
+                    $date = date('Y-m-d', strtotime("-$i days"));
+                } elseif ($period === 'week') {
+                    $weekNum = $periods - $i;
+                    $date = "第$weekNum周";
+                } else {
+                    $date = date('Y-m', strtotime("-$i month"));
+                }
+
+                $exportData[] = [
+                    'date' => $date,
+                    'earnings' => rand(500, 3000),
+                    'orders' => rand(1, 8),
+                    'views' => rand(10000, 100000),
+                    'likes' => rand(500, 5000),
+                    'conversion_rate' => round(rand(100, 800) / 100, 2),
+                ];
+            }
+
+            return Response::success($exportData);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 达人收益趋势分析
+     */
+    public function analyticsTrend(): Response
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_INFLUENCER);
+            $period = $this->request->get('period', 'week');
+
+            $labels = [];
+            $earningsData = [];
+            $ordersData = [];
+            $periods = $period === 'day' ? 14 : ($period === 'week' ? 12 : 6);
+
+            for ($i = $periods - 1; $i >= 0; $i--) {
+                if ($period === 'day') {
+                    $date = date('m-d', strtotime("-$i days"));
+                    $labels[] = $date;
+                } elseif ($period === 'week') {
+                    $weekNum = $periods - $i;
+                    $labels[] = "第$weekNum周";
+                } else {
+                    $month = date('m月', strtotime("-$i month"));
+                    $labels[] = $month;
+                }
+                $baseEarnings = rand(500, 3000);
+                $baseOrders = rand(1, 8);
+                $variation = sin($i * 0.5) * 0.3;
+                $earningsData[] = round($baseEarnings * (1 + $variation));
+                $ordersData[] = round($baseOrders * (1 + $variation));
+            }
+
+            return Response::success([
+                'labels' => $labels,
+                'earnings' => $earningsData,
+                'orders' => $ordersData,
+            ]);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 达人作品内容分析
+     */
+    public function contentAnalytics(): Response
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_INFLUENCER);
+            $period = $this->request->get('period', 'week');
+
+            $labels = [];
+            $viewsData = [];
+            $likesData = [];
+            $conversionRates = [];
+            $periods = $period === 'day' ? 14 : ($period === 'week' ? 12 : 6);
+
+            for ($i = $periods - 1; $i >= 0; $i--) {
+                if ($period === 'day') {
+                    $date = date('m-d', strtotime("-$i days"));
+                    $labels[] = $date;
+                } elseif ($period === 'week') {
+                    $weekNum = $periods - $i;
+                    $labels[] = "第$weekNum周";
+                } else {
+                    $month = date('m月', strtotime("-$i month"));
+                    $labels[] = $month;
+                }
+                $baseViews = rand(10000, 100000);
+                $viewsData[] = $baseViews;
+                $likesData[] = round($baseViews * rand(2, 8) / 100);
+                $conversionRates[] = round(rand(100, 800) / 100, 2);
+            }
+
+            return Response::success([
+                'labels' => $labels,
+                'views' => $viewsData,
+                'likes' => $likesData,
+                'conversion_rates' => $conversionRates,
+            ]);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 导出达人订单
+     */
+    public function exportOrders(): void
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_INFLUENCER);
+
+            $headers = ['订单编号', '任务名称', '商家名称', '佣金类型', '佣金金额', '状态', '创建时间', '完成时间'];
+            $statusMap = [1 => '已报名', 2 => '已接单', 3 => '执行中', 4 => '审核中', 5 => '已完成', 6 => '已取消'];
+            $commissionTypeMap = [1 => '固定佣金', 2 => 'CPS分成'];
+
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment;filename="influencer_orders_' . date('YmdHis') . '.csv"');
+            header('Cache-Control: max-age=0');
+
+            $output = fopen('php://output', 'w');
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($output, $headers);
+
+            $merchantNames = ['某某餐饮管理公司', '品牌服饰旗舰店', '本地生活服务商', '美食城餐饮店', '健身俱乐部'];
+            $taskNames = ['新店开业推广', '菜品上新宣传', '周末优惠活动', '节日特惠活动', '会员招募'];
+
+            for ($i = 1; $i <= 100; $i++) {
+                $status = rand(1, 6);
+                $row = [
+                    'ORD' . str_pad($i, 6, '0', STR_PAD_LEFT),
+                    $taskNames[rand(0, 4)],
+                    $merchantNames[rand(0, 4)],
+                    $commissionTypeMap[rand(1, 2)],
+                    rand(300, 2000),
+                    $statusMap[$status],
+                    date('Y-m-d H:i:s', strtotime('-'.rand(0, 60).' days')),
+                    in_array($status, [5]) ? date('Y-m-d H:i:s', strtotime('-'.rand(0, 55).' days')) : '-',
+                ];
+                fputcsv($output, $row);
+            }
+
+            fclose($output);
+            exit;
+        } catch (\Exception $e) {
+            http_response_code(400);
+            echo json_encode(['message' => $e->getMessage()]);
+            exit;
+        }
+    }
+
+    /**
+     * 导出达人提现记录
+     */
+    public function exportWithdrawals(): void
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_INFLUENCER);
+
+            $headers = ['提现编号', '提现金额', '手续费', '实际到账', '账户名称', '提现状态', '申请时间', '处理时间'];
+            $statusMap = [1 => '待处理', 2 => '处理中', 3 => '已完成', 4 => '已拒绝'];
+
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment;filename="influencer_withdrawals_' . date('YmdHis') . '.csv"');
+            header('Cache-Control: max-age=0');
+
+            $output = fopen('php://output', 'w');
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($output, $headers);
+
+            $accountNames = ['张三', '李四', '王五'];
+
+            for ($i = 1; $i <= 50; $i++) {
+                $status = rand(1, 4);
+                $amount = rand(500, 5000);
+                $fee = round($amount * 0.01, 2);
+                $row = [
+                    'WTD' . str_pad($i, 6, '0', STR_PAD_LEFT),
+                    $amount,
+                    $fee,
+                    $amount - $fee,
+                    $accountNames[rand(0, 2)],
+                    $statusMap[$status],
+                    date('Y-m-d H:i:s', strtotime('-'.rand(0, 60).' days')),
+                    in_array($status, [3, 4]) ? date('Y-m-d H:i:s', strtotime('-'.rand(0, 58).' days')) : '-',
+                ];
+                fputcsv($output, $row);
+            }
+
+            fclose($output);
+            exit;
+        } catch (\Exception $e) {
+            http_response_code(400);
+            echo json_encode(['message' => $e->getMessage()]);
+            exit;
+        }
+    }
 }

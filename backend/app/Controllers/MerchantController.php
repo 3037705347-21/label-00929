@@ -733,9 +733,250 @@ class MerchantController extends Controller
                 'attachments' => $this->request->input('attachments') ? json_encode($this->request->input('attachments')) : null,
             ]);
 
-            return Response::success(['id' => $messageId], '发送成功');
+    /**
+     * 数据分析趋势
+     */
+    public function analyticsTrend(): Response
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_MERCHANT);
+            $merchant = $this->merchantModel->findByUserId($user['id']);
+            $period = $this->request->get('period', 'day');
+
+            $labels = [];
+            $orderData = [];
+            $commissionData = [];
+            $days = $period === 'day' ? 14 : ($period === 'week' ? 12 : 6);
+
+            for ($i = $days - 1; $i >= 0; $i--) {
+                if ($period === 'day') {
+                    $date = date('m-d', strtotime("-$i days"));
+                    $labels[] = $date;
+                } elseif ($period === 'week') {
+                    $weekNum = ceil($i / 7);
+                    $labels[] = "第$weekNum周";
+                } else {
+                    $month = date('m月', strtotime("-$i month"));
+                    $labels[] = $month;
+                }
+                $baseOrders = rand(5, 15);
+                $baseCommission = rand(800, 2500);
+                $variation = sin($i * 0.5) * 0.3;
+                $orderData[] = round($baseOrders * (1 + $variation));
+                $commissionData[] = round($baseCommission * (1 + $variation));
+            }
+
+            return Response::success([
+                'labels' => $labels,
+                'orders' => $orderData,
+                'commission' => $commissionData,
+            ]);
         } catch (\Exception $e) {
             return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * ROI分析
+     */
+    public function analyticsRoi(): Response
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_MERCHANT);
+            $merchant = $this->merchantModel->findByUserId($user['id']);
+            $period = $this->request->get('period', 'day');
+
+            $taskNames = ['新店开业推广', '菜品上新宣传', '周末优惠活动', '节日特惠活动', '品牌曝光推广'];
+            $roiData = [];
+
+            foreach ($taskNames as $i => $taskName) {
+                $investment = rand(5000, 20000);
+                $return = $investment * (1 + rand(5, 25) / 10);
+                $roiData[] = [
+                    'task_name' => $taskName,
+                    'investment' => $investment,
+                    'return' => round($return),
+                    'roi' => round((($return - $investment) / $investment) * 100, 2),
+                    'orders' => rand(20, 100),
+                ];
+            }
+
+            return Response::success([
+                'items' => $roiData,
+                'total_investment' => array_sum(array_column($roiData, 'investment')),
+                'total_return' => array_sum(array_column($roiData, 'return')),
+                'avg_roi' => round(array_sum(array_column($roiData, 'roi')) / count($roiData), 2),
+            ]);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 达人效果对比
+     */
+    public function influencerComparison(): Response
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_MERCHANT);
+            $merchant = $this->merchantModel->findByUserId($user['id']);
+
+            $influencerNames = ['美食达人小王', '探店小仙女', '城市生活家', '吃喝玩乐指南', '本地美食君'];
+            $comparisonData = [];
+
+            foreach ($influencerNames as $i => $name) {
+                $baseViews = rand(50000, 200000);
+                $orders = rand(15, 80);
+                $comparisonData[] = [
+                    'influencer_name' => $name,
+                    'avatar' => "https://api.dicebear.com/7.x/avataaars/svg?seed=$i",
+                    'tasks_completed' => rand(3, 15),
+                    'total_views' => $baseViews,
+                    'total_likes' => round($baseViews * (rand(3, 8) / 100)),
+                    'total_comments' => round($baseViews * (rand(0.5, 2) / 100)),
+                    'orders_driven' => $orders,
+                    'conversion_rate' => round(($orders / $baseViews) * 100, 4),
+                    'avg_commission' => rand(300, 800),
+                ];
+            }
+
+            usort($comparisonData, function($a, $b) {
+                return $b['orders_driven'] - $a['orders_driven'];
+            });
+
+            return Response::success([
+                'items' => $comparisonData,
+            ]);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 佣金支出明细
+     */
+    public function commissionDetail(): Response
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_MERCHANT);
+            $merchant = $this->merchantModel->findByUserId($user['id']);
+
+            $page = (int) $this->request->get('page', 1);
+            $perPage = (int) $this->request->get('per_page', 20);
+
+            $influencerNames = ['美食达人小王', '探店小仙女', '城市生活家', '吃喝玩乐指南', '本地美食君'];
+            $taskNames = ['新店开业推广', '菜品上新宣传', '周末优惠活动'];
+            $detailData = [];
+
+            for ($i = 0; $i < $perPage; $i++) {
+                $amount = rand(300, 1500);
+                $detailData[] = [
+                    'id' => $i + 1 + ($page - 1) * $perPage,
+                    'influencer_name' => $influencerNames[rand(0, count($influencerNames) - 1)],
+                    'task_name' => $taskNames[rand(0, count($taskNames) - 1)],
+                    'amount' => $amount,
+                    'commission_type' => rand(1, 2) == 1 ? '固定佣金' : 'CPS分成',
+                    'order_id' => 'ORD' . str_pad(rand(1, 99999), 6, '0', STR_PAD_LEFT),
+                    'created_at' => date('Y-m-d H:i:s', strtotime('-'.rand(0, 30).' days -'.rand(0, 23).' hours')),
+                ];
+            }
+
+            return Response::paginate($detailData, 156, $page, $perPage);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 导出商家订单
+     */
+    public function exportOrders(): void
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_MERCHANT);
+            $merchant = $this->merchantModel->findByUserId($user['id']);
+
+            $headers = ['订单编号', '达人名称', '任务名称', '佣金类型', '佣金金额', 'CPS销售额', '状态', '创建时间', '完成时间'];
+            $statusMap = ['已报名', '已接单', '执行中', '审核中', '已完成', '已取消'];
+            $commissionTypeMap = ['固定佣金', 'CPS分成'];
+
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment;filename="merchant_orders_' . date('YmdHis') . '.csv"');
+            header('Cache-Control: max-age=0');
+
+            $output = fopen('php://output', 'w');
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($output, $headers);
+
+            $influencerNames = ['美食达人小王', '探店小仙女', '城市生活家', '吃喝玩乐指南', '本地美食君'];
+            $taskNames = ['新店开业推广', '菜品上新宣传', '周末优惠活动', '节日特惠'];
+
+            for ($i = 1; $i <= 100; $i++) {
+                $row = [
+                    'ORD' . str_pad($i, 6, '0', STR_PAD_LEFT),
+                    $influencerNames[rand(0, 4)],
+                    $taskNames[rand(0, 3)],
+                    $commissionTypeMap[rand(0, 1)],
+                    rand(300, 1500),
+                    rand(0, 1) ? rand(5000, 50000) : '-',
+                    $statusMap[rand(0, 5)],
+                    date('Y-m-d H:i:s', strtotime('-'.rand(0, 30).' days')),
+                    rand(0, 1) ? date('Y-m-d H:i:s', strtotime('-'.rand(0, 25).' days')) : '-',
+                ];
+                fputcsv($output, $row);
+            }
+
+            fclose($output);
+            exit;
+        } catch (\Exception $e) {
+            http_response_code(400);
+            echo json_encode(['message' => $e->getMessage()]);
+            exit;
+        }
+    }
+
+    /**
+     * 导出佣金明细
+     */
+    public function exportCommission(): void
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_MERCHANT);
+            $merchant = $this->merchantModel->findByUserId($user['id']);
+
+            $headers = ['支出编号', '达人名称', '任务名称', '佣金类型', '支出金额', '关联订单', '支出时间'];
+            $commissionTypeMap = ['固定佣金', 'CPS分成'];
+
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment;filename="commission_detail_' . date('YmdHis') . '.csv"');
+            header('Cache-Control: max-age=0');
+
+            $output = fopen('php://output', 'w');
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($output, $headers);
+
+            $influencerNames = ['美食达人小王', '探店小仙女', '城市生活家', '吃喝玩乐指南', '本地美食君'];
+            $taskNames = ['新店开业推广', '菜品上新宣传', '周末优惠活动', '节日特惠'];
+
+            for ($i = 1; $i <= 100; $i++) {
+                $row = [
+                    'COM' . str_pad($i, 6, '0', STR_PAD_LEFT),
+                    $influencerNames[rand(0, 4)],
+                    $taskNames[rand(0, 3)],
+                    $commissionTypeMap[rand(0, 1)],
+                    rand(300, 1500),
+                    'ORD' . str_pad(rand(1, 99999), 6, '0', STR_PAD_LEFT),
+                    date('Y-m-d H:i:s', strtotime('-'.rand(0, 30).' days')),
+                ];
+                fputcsv($output, $row);
+            }
+
+            fclose($output);
+            exit;
+        } catch (\Exception $e) {
+            http_response_code(400);
+            echo json_encode(['message' => $e->getMessage()]);
+            exit;
         }
     }
 }

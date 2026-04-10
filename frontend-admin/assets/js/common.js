@@ -5,6 +5,196 @@
 // API 基础配置
 const API_BASE = '/api';
 
+// Chart.js 加载状态
+let chartJsLoaded = false;
+let chartJsLoading = false;
+
+// 加载 Chart.js
+function loadChartJS() {
+    return new Promise((resolve, reject) => {
+        if (chartJsLoaded) {
+            resolve(window.Chart);
+            return;
+        }
+        if (chartJsLoading) {
+            const interval = setInterval(() => {
+                if (chartJsLoaded) {
+                    clearInterval(interval);
+                    resolve(window.Chart);
+                }
+            }, 100);
+            return;
+        }
+        chartJsLoading = true;
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js';
+        script.onload = () => {
+            chartJsLoaded = true;
+            chartJsLoading = false;
+            resolve(window.Chart);
+        };
+        script.onerror = () => {
+            chartJsLoading = false;
+            reject(new Error('Failed to load Chart.js'));
+        };
+        document.head.appendChild(script);
+    });
+}
+
+// 图表颜色配置
+const chartColors = {
+    primary: 'rgba(54, 162, 235, 1)',
+    primaryBg: 'rgba(54, 162, 235, 0.2)',
+    success: 'rgba(34, 197, 94, 1)',
+    successBg: 'rgba(34, 197, 94, 0.2)',
+    warning: 'rgba(255, 159, 64, 1)',
+    warningBg: 'rgba(255, 159, 64, 0.2)',
+    danger: 'rgba(255, 99, 132, 1)',
+    dangerBg: 'rgba(255, 99, 132, 0.2)',
+    info: 'rgba(119, 77, 231, 1)',
+    infoBg: 'rgba(119, 77, 231, 0.2)',
+    secondary: 'rgba(107, 119, 140, 1)',
+    secondaryBg: 'rgba(107, 119, 140, 0.2)',
+};
+
+// 创建趋势图表
+async function createTrendChart(canvasId, { title, labels, datasets, type = 'line' }) {
+    await loadChartJS();
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return null;
+
+    const ctx = canvas.getContext('2d');
+    return new Chart(ctx, {
+        type: type,
+        data: {
+            labels: labels,
+            datasets: datasets.map((ds, i) => ({
+                ...ds,
+                borderColor: ds.borderColor || Object.values(chartColors).filter((_, idx) => idx % 2 === 0)[i % 8],
+                backgroundColor: ds.backgroundColor || Object.values(chartColors).filter((_, idx) => idx % 2 === 1)[i % 8],
+                borderWidth: ds.borderWidth ?? 2,
+                tension: ds.tension ?? 0.3,
+                fill: ds.fill ?? type === 'line',
+            }))
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: title ? {
+                    display: true,
+                    text: title,
+                    font: { size: 14, weight: 'bold' },
+                    padding: { bottom: 15 }
+                } : undefined,
+                legend: {
+                    position: 'top',
+                    labels: { usePointStyle: true, padding: 15 }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                }
+            },
+            scales: type === 'line' ? {
+                x: {
+                    grid: { display: false }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                }
+            } : undefined,
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            }
+        }
+    });
+}
+
+// 数据导出函数（Excel/CSV）
+function exportToCSV(data, filename, headers = null) {
+    let csvContent = '';
+
+    // 处理表头
+    if (headers) {
+        csvContent += headers.join(',') + '\r\n';
+    } else if (data.length > 0) {
+        csvContent += Object.keys(data[0]).join(',') + '\r\n';
+    }
+
+    // 处理数据行
+    data.forEach(item => {
+        const row = Object.values(item).map(val => {
+            if (typeof val === 'string') {
+                // 处理包含逗号和引号的字符串
+                return '"' + val.replace(/"/g, '""') + '"';
+            }
+            return val;
+        }).join(',');
+        csvContent += row + '\r\n';
+    });
+
+    // 创建下载链接
+    const BOM = '\uFEFF'; // UTF-8 BOM 确保Excel正确识别中文
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    triggerDownload(blob, filename + '.csv');
+}
+
+// 触发文件下载
+function triggerDownload(blob, filename) {
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// 从API导出数据
+async function fetchExportData(apiUrl, params, filename) {
+    try {
+        showToast('正在导出数据...', 'info', 0);
+        const response = await fetch(API_BASE + apiUrl + '?' + new URLSearchParams({
+            ...params,
+            export: 'csv'
+        }), {
+            headers: {
+                'Authorization': 'Bearer ' + getToken()
+            }
+        });
+
+        // 检查响应类型
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            if (data.code === 0 && data.data?.items) {
+                exportToCSV(data.data.items, filename, data.data.headers);
+                showToast('导出成功！', 'success');
+            } else {
+                showToast(data.message || '导出失败', 'error');
+            }
+        } else {
+            // 直接处理文件下载
+            const blob = await response.blob();
+            if (blob.size > 0) {
+                triggerDownload(blob, filename + '.csv');
+                showToast('导出成功！', 'success');
+            } else {
+                showToast('导出数据为空', 'warning');
+            }
+        }
+    } catch (err) {
+        console.error('Export error:', err);
+        showToast('导出失败：' + err.message, 'error');
+    }
+}
+
 // 获取当前端类型
 function getPortalType() {
     const path = window.location.pathname;

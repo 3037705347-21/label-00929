@@ -105,6 +105,9 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">提现记录</h3>
+                        <button onclick="exportWithdrawalsCSV()" class="btn btn-secondary btn-sm ml-auto">
+                            <span>📥</span> 导出记录
+                        </button>
                     </div>
                     <div class="table-wrapper">
                         <table class="table">
@@ -216,6 +219,39 @@
                 btn.disabled = false;
             }
         };
+
+        async function exportWithdrawalsCSV() {
+            try {
+                showLoading();
+                const res = await get('/influencer/wallet/withdrawals/export');
+
+                if (res.code === 0 && res.data) {
+                    const withdrawals = res.data;
+                    const headers = ['提现单号', '金额(元)', '手续费(元)', '实际到账(元)', '状态', '申请时间', '完成时间'];
+                    const data = withdrawals.map(w => [
+                        w.withdraw_no,
+                        w.amount,
+                        w.fee,
+                        w.real_amount,
+                        getWithdrawalStatusText(w.status),
+                        formatDate(w.applied_at),
+                        formatDate(w.completed_at)
+                    ]);
+                    exportToCSV({ headers, data }, `提现记录_${new Date().toLocaleDateString()}`);
+                } else {
+                    showToast(res.message || '导出失败', 'error');
+                }
+            } catch (err) {
+                showToast('导出失败', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function getWithdrawalStatusText(status) {
+            const map = { 1: '待审核', 2: '处理中', 3: '已完成', 4: '已拒绝' };
+            return map[status] || '未知';
+        }
 
         // 初始化
         loadSettings();

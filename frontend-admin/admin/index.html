@@ -240,6 +240,72 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 深度分析图表区域 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">趋势分析</h3>
+                        <div class="card-tools">
+                            <select id="trendPeriod" onchange="reloadAdminCharts()" style="width: 100px;">
+                                <option value="day">按日</option>
+                                <option value="week" selected>按周</option>
+                                <option value="month">按月</option>
+                            </select>
+                            <button class="btn btn-secondary btn-sm ml-sm" onclick="exportAdminTrendData()">
+                                📥 导出数据
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="userRegChart"></canvas>
+                        </div>
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="taskPublishChart"></canvas>
+                        </div>
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="gmvChart"></canvas>
+                        </div>
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="platformFeeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 用户增长漏斗 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">用户增长漏斗</h3>
+                        <button class="btn btn-secondary btn-sm" onclick="exportFunnelData()">📥 导出</button>
+                    </div>
+                    <div class="funnel-chart">
+                        <div class="grid grid-5" id="funnelContainer">
+                            <div class="funnel-item text-center">
+                                <div class="funnel-value" id="funnelVisits">0</div>
+                                <div class="funnel-label">访问量</div>
+                            </div>
+                            <div class="funnel-item text-center">
+                                <div class="funnel-value" id="funnelRegisters">0</div>
+                                <div class="funnel-label">注册用户</div>
+                            </div>
+                            <div class="funnel-item text-center">
+                                <div class="funnel-value" id="funnelVerified">0</div>
+                                <div class="funnel-label">认证用户</div>
+                            </div>
+                            <div class="funnel-item text-center">
+                                <div class="funnel-value" id="funnelActive">0</div>
+                                <div class="funnel-label">活跃用户</div>
+                            </div>
+                            <div class="funnel-item text-center">
+                                <div class="funnel-value" id="funnelPaid">0</div>
+                                <div class="funnel-label">付费用户</div>
+                            </div>
+                        </div>
+                        <div class="chart-container mt-lg" style="height: 250px;">
+                            <canvas id="funnelChart"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -360,6 +426,154 @@
             document.querySelector('.sidebar').classList.toggle('open');
             document.getElementById('sidebarOverlay').classList.toggle('show');
         }
+
+        // 存储图表实例以便销毁重建
+        let adminCharts = {};
+
+        // 加载所有管理端图表
+        async function loadAdminCharts() {
+            try {
+                const period = document.getElementById('trendPeriod').value;
+                const res = await get('/admin/dashboard/trends', { period });
+
+                if (res.code === 0) {
+                    const { trends, funnel } = res.data;
+
+                    // 销毁旧图表
+                    Object.values(adminCharts).forEach(chart => {
+                        if (chart) chart.destroy();
+                    });
+                    adminCharts = {};
+
+                    // 用户注册趋势图
+                    if (trends.user_reg) {
+                        adminCharts.userReg = await createTrendChart('userRegChart', {
+                            title: '用户注册趋势',
+                            labels: trends.user_reg.labels,
+                            datasets: [{
+                                label: '注册用户数',
+                                data: trends.user_reg.data
+                            }]
+                        });
+                    }
+
+                    // 任务发布趋势图
+                    if (trends.task_publish) {
+                        adminCharts.taskPublish = await createTrendChart('taskPublishChart', {
+                            title: '任务发布趋势',
+                            labels: trends.task_publish.labels,
+                            datasets: [{
+                                label: '发布任务数',
+                                data: trends.task_publish.data,
+                                borderColor: chartColors.success,
+                                backgroundColor: chartColors.successBg
+                            }]
+                        });
+                    }
+
+                    // GMV趋势图
+                    if (trends.gmv) {
+                        adminCharts.gmv = await createTrendChart('gmvChart', {
+                            title: '平台GMV趋势',
+                            labels: trends.gmv.labels,
+                            datasets: [{
+                                label: 'GMV(元)',
+                                data: trends.gmv.data,
+                                borderColor: chartColors.warning,
+                                backgroundColor: chartColors.warningBg
+                            }]
+                        });
+                    }
+
+                    // 服务费收入趋势图
+                    if (trends.platform_fee) {
+                        adminCharts.platformFee = await createTrendChart('platformFeeChart', {
+                            title: '服务费收入趋势',
+                            labels: trends.platform_fee.labels,
+                            datasets: [{
+                                label: '服务费(元)',
+                                data: trends.platform_fee.data,
+                                borderColor: chartColors.info,
+                                backgroundColor: chartColors.infoBg
+                            }]
+                        });
+                    }
+
+                    // 用户增长漏斗数据
+                    if (funnel) {
+                        // 更新漏斗数字
+                        document.getElementById('funnelVisits').textContent = formatNumber(funnel.visits || 0);
+                        document.getElementById('funnelRegisters').textContent = formatNumber(funnel.registers || 0);
+                        document.getElementById('funnelVerified').textContent = formatNumber(funnel.verified || 0);
+                        document.getElementById('funnelActive').textContent = formatNumber(funnel.active || 0);
+                        document.getElementById('funnelPaid').textContent = formatNumber(funnel.paid || 0);
+
+                        // 漏斗图表（水平条形图）
+                        const funnelLabels = ['访问量', '注册用户', '认证用户', '活跃用户', '付费用户'];
+                        const funnelData = [
+                            funnel.visits || 0,
+                            funnel.registers || 0,
+                            funnel.verified || 0,
+                            funnel.active || 0,
+                            funnel.paid || 0
+                        ];
+
+                        // 计算转化率
+                        const conversionRates = funnelData.map((val, idx) =>
+                            idx === 0 ? '100%' : (funnelData[0] > 0 ? Math.round(val / funnelData[0] * 100) : 0) + '%'
+                        );
+
+                        adminCharts.funnel = await createTrendChart('funnelChart', {
+                            title: '用户转化漏斗',
+                            labels: funnelLabels,
+                            datasets: [{
+                                label: '用户数',
+                                data: funnelData,
+                                borderColor: [
+                                    chartColors.primary,
+                                    chartColors.success,
+                                    chartColors.warning,
+                                    chartColors.info,
+                                    chartColors.danger
+                                ],
+                                backgroundColor: [
+                                    chartColors.primaryBg,
+                                    chartColors.successBg,
+                                    chartColors.warningBg,
+                                    chartColors.infoBg,
+                                    chartColors.dangerBg
+                                ]
+                            }],
+                            type: 'bar'
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error('Load charts error:', err);
+            }
+        }
+
+        // 切换时间周期重新加载
+        function reloadAdminCharts() {
+            loadAdminCharts();
+        }
+
+        // 导出趋势分析数据
+        async function exportAdminTrendData() {
+            const period = document.getElementById('trendPeriod').value;
+            await fetchExportData('/admin/dashboard/trends/export', { period }, '趋势分析报表_' + new Date().toISOString().slice(0,10));
+        }
+
+        // 导出漏斗分析数据
+        async function exportFunnelData() {
+            const period = document.getElementById('trendPeriod').value;
+            await fetchExportData('/admin/dashboard/funnel/export', { period }, '用户增长漏斗报表_' + new Date().toISOString().slice(0,10));
+        }
+
+        // 页面加载完成后初始化图表
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAdminCharts();
+        });
     </script>
 </body>
 </html>
