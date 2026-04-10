@@ -81,6 +81,12 @@ $router->group('/api/merchant', function($router) {
     $router->get('/dashboard', 'MerchantController@dashboard');
     $router->get('/statistics', 'MerchantController@statistics');
 
+    // 报表分析
+    $router->get('/report/roi-analysis', 'MerchantController@getRoiAnalysis');
+    $router->get('/report/influencer-comparison', 'MerchantController@getInfluencerComparison');
+    $router->get('/report/commission-trend', 'MerchantController@getCommissionTrend');
+    $router->get('/report/export', 'MerchantController@exportMerchantReport');
+
     // 财务管理
     $router->get('/wallet', 'MerchantController@wallet');
     $router->post('/wallet/recharge', 'MerchantController@recharge');
@@ -127,6 +133,11 @@ $router->group('/api/influencer', function($router) {
 
     // 我的主页/作品集
     $router->get('/portfolio', 'InfluencerController@portfolio');
+
+    // 报表分析
+    $router->get('/report/earnings-trend', 'InfluencerController@getEarningsTrend');
+    $router->get('/report/content-performance', 'InfluencerController@getContentPerformance');
+    $router->get('/report/export', 'InfluencerController@exportReport');
 });
 
 // ==================== 管理后台接口 ====================
@@ -193,6 +204,11 @@ $router->group('/api/admin', function($router) {
 
     // 操作日志
     $router->get('/logs', 'AdminController@logList');
+
+    // 报表分析
+    $router->get('/report/trends', 'AdminController@getTrends');
+    $router->get('/report/funnel', 'AdminController@getFunnel');
+    $router->get('/report/export', 'AdminController@exportReport');
 });
 
 return $router;

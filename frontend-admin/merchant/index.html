@@ -121,6 +121,52 @@
                     </div>
                 </div>
 
+                <!-- 数据分析 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">任务 ROI 分析</h3>
+                    </div>
+                    <div class="grid grid-2">
+                        <div style="padding: 1rem;">
+                            <canvas id="roiChart" height="200"></canvas>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <h4 style="margin-bottom: 1rem; color: #334155;">达人效果对比</h4>
+                            <canvas id="influencerCompareChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">佣金支出明细</h3>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <canvas id="commissionChart" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- 数据导出 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">数据导出</h3>
+                    </div>
+                    <div class="quick-actions">
+                        <a href="javascript:exportMerchantData('orders')" class="quick-action-item">
+                            <span class="quick-action-icon">📦</span>
+                            <span>订单列表</span>
+                        </a>
+                        <a href="javascript:exportMerchantData('transactions')" class="quick-action-item">
+                            <span class="quick-action-icon">💳</span>
+                            <span>交易流水</span>
+                        </a>
+                        <a href="javascript:exportMerchantData('commission')" class="quick-action-item">
+                            <span class="quick-action-icon">💰</span>
+                            <span>佣金支出明细</span>
+                        </a>
+                    </div>
+                </div>
+
                 <!-- 最近任务 -->
                 <div class="card">
                     <div class="card-header">
@@ -151,8 +197,9 @@
         </main>
     </div>
 
-    <script src="/assets/js/common.js"></script>
-    <script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/assets/js/common.js"></script>
+<script>
         // 下拉菜单切换
         function toggleDropdown() {
             document.getElementById('dropdownMenu').classList.toggle('show');
@@ -229,6 +276,119 @@
         loadUserInfo();
         loadDashboard();
         loadRecentTasks();
+        loadMerchantCharts();
+
+        let roiChart, influencerCompareChart, commissionChart;
+
+        async function loadMerchantCharts() {
+            try {
+                const res = await get('/merchant/reports/analytics');
+                if (res.code === 0) {
+                    const { roi, influencer_compare, commission } = res.data;
+                    renderRoiChart(roi);
+                    renderInfluencerCompareChart(influencer_compare);
+                    renderCommissionChart(commission);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderRoiChart(data) {
+            const ctx = document.getElementById('roiChart').getContext('2d');
+            if (!data || !data.costs || !data.gmv || !data.roi_values ||
+                (data.costs.every(v => v === 0 || v === null || v === undefined) &&
+                 data.gmv.every(v => v === 0 || v === null || v === undefined))) {
+                roiChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: ['暂无数据'], datasets: [{ label: 'ROI分析', data: [0], backgroundColor: '#10B981' }] },
+                    options: { responsive: true, plugins: { tooltip: { callbacks: { label: () => '暂无数据，请稍后再查' } } } } }
+                });
+                return;
+            }
+            roiChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: '投入成本',
+                            data: data.costs,
+                            backgroundColor: '#EF4444'
+                        },
+                        {
+                            label: '产出GMV',
+                            data: data.gmv,
+                            backgroundColor: '#10B981'
+                        },
+                        {
+                            label: 'ROI',
+                            data: data.roi_values,
+                            borderColor: '#3B82F6',
+                            type: 'line',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { type: 'linear', position: 'left' },
+                        y1: { type: 'linear', position: 'right' }
+                    }
+                }
+            });
+        }
+
+        function renderInfluencerCompareChart(data) {
+            const ctx = document.getElementById('influencerCompareChart').getContext('2d');
+            if (!data || !data.datasets || data.datasets.length === 0) {
+                influencerCompareChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: { labels: ['曝光量', '点击量', '转化率', '订单量', '好评率'], datasets: [{ label: '暂无数据', data: [0, 0, 0, 0, 0] }] },
+                    options: { responsive: true, plugins: { tooltip: { callbacks: { label: () => '暂无数据，请稍后再查' } } } } }
+                });
+                return;
+            }
+            influencerCompareChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['曝光量', '点击量', '转化率', '订单量', '好评率'],
+                    datasets: data.datasets || []
+                },
+                options: { responsive: true }
+            });
+        }
+
+        function renderCommissionChart(data) {
+            const ctx = document.getElementById('commissionChart').getContext('2d');
+            if (!data || !data.values || data.values.every(v => v === 0 || v === null || v === undefined)) {
+                commissionChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: ['暂无数据'], datasets: [{ label: '佣金支出', data: [0], borderColor: '#8B5CF6' }] },
+                    options: { responsive: true, plugins: { tooltip: { callbacks: { label: () => '暂无数据，请稍后再查' } } } } }
+                });
+                return;
+            }
+            commissionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: '佣金支出',
+                        data: data.values,
+                        borderColor: '#8B5CF6',
+                        fill: true,
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)'
+                    }]
+                },
+                options: { responsive: true }
+            });
+        }
+
+        function exportMerchantData(type) {
+            downloadFile(`/api/merchant/report/export?type=${type}`);
+        }
 
         // 侧边栏切换
         function toggleSidebar() {

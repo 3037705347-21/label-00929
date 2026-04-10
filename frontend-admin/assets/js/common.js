@@ -357,6 +357,65 @@ async function uploadFile(file) {
     return response.json();
 }
 
+// 带认证头的文件下载（用于导出报表）
+async function downloadFile(url, filename = 'export.xlsx') {
+    const token = getToken();
+    
+    try {
+        showToast('正在准备下载...', 'info');
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        if (response.status === 401) {
+            clearToken();
+            const portal = getPortalType();
+            if (portal === 'admin') {
+                window.location.href = '/admin/login.html';
+            } else {
+                window.location.href = '/login.html';
+            }
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error('下载请求失败');
+        }
+
+        // 从响应头获取文件名
+        const contentDisposition = response.headers.get('Content-Disposition');
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+            if (filenameMatch && filenameMatch[1]) {
+                filename = filenameMatch[1].replace(/['"]/g, '');
+            }
+        }
+
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        
+        // 创建隐藏的 a 标签触发下载
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        
+        // 清理
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(downloadUrl);
+        
+        showToast('文件下载成功', 'success');
+    } catch (error) {
+        console.error('Download error:', error);
+        showToast('文件下载失败: ' + error.message, 'error');
+    }
+}
+
 // 检查登录状态
 function checkAuth() {
     const token = getToken();

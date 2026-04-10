@@ -550,4 +550,194 @@ class InfluencerController extends Controller
             return Response::error($e->getMessage(), $e->getCode() ?: 400);
         }
     }
+
+    /**
+     * 获取收益趋势数据
+     */
+    public function getEarningsTrend(): Response
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_INFLUENCER);
+            $influencer = $this->influencerModel->findByUserId($user['id']);
+
+            $days = (int) $this->request->get('days', 28);
+            $endDate = date('Y-m-d');
+            $startDate = date('Y-m-d', strtotime("-$days days"));
+
+            $earnings = $this->getTrendData('task_orders', 'completed_at', $days, 'actual_reward', [
+                ['influencer_id', '=', $influencer['id']],
+                ['status', '=', TaskOrder::STATUS_COMPLETED]
+            ]);
+
+            return Response::success([
+                'earnings' => $earnings
+            ]);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 获取内容表现数据
+     */
+    public function getContentPerformance(): Response
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_INFLUENCER);
+            $influencer = $this->influencerModel->findByUserId($user['id']);
+
+            $days = (int) $this->request->get('days', 28);
+
+            $views = $this->getTrendData('works', 'created_at', $days, 'views', [
+                ['influencer_id', '=', $influencer['id']]
+            ]);
+
+            $likes = $this->getTrendData('works', 'created_at', $days, 'likes', [
+                ['influencer_id', '=', $influencer['id']]
+            ]);
+
+            $conversions = $this->getTrendData('task_orders', 'completed_at', $days, 'conversion_count', [
+                ['influencer_id', '=', $influencer['id']],
+                ['status', '=', TaskOrder::STATUS_COMPLETED]
+            ]);
+
+            return Response::success([
+                'views' => $views,
+                'likes' => $likes,
+                'conversions' => $conversions
+            ]);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 导出达人报表
+     */
+    public function exportReport(): Response
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_INFLUENCER);
+            $influencer = $this->influencerModel->findByUserId($user['id']);
+
+            $format = $this->request->get('format', 'csv');
+            $type = $this->request->get('type', 'earnings');
+
+            $data = [];
+            $filename = '';
+
+            switch ($type) {
+                case 'earnings':
+                    $filename = '收益趋势报表_' . date('Ymd');
+                    $data = $this->getTrendData('task_orders', 'completed_at', 28, 'actual_reward', [
+                        ['influencer_id', '=', $influencer['id']],
+                        ['status', '=', TaskOrder::STATUS_COMPLETED]
+                    ]);
+                    break;
+                case 'performance':
+                    $filename = '内容表现数据_' . date('Ymd');
+                    $data = $this->getTrendData('works', 'created_at', 28, 'views', [
+                        ['influencer_id', '=', $influencer['id']]
+                    ]);
+                    break;
+                case 'orders':
+                    $filename = '订单完成数据_' . date('Ymd');
+                    $data = $this->getTrendData('task_orders', 'completed_at', 28, '*', [
+                        ['influencer_id', '=', $influencer['id']],
+                        ['status', '=', TaskOrder::STATUS_COMPLETED]
+                    ], 'count');
+                    break;
+            }
+
+            if ($format === 'csv') {
+                return $this->exportCSV($data, $filename);
+            } else {
+                return $this->exportExcel($data, $filename);
+            }
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 获取趋势数据
+     */
+    private function getTrendData(string $table, string $dateColumn, int $days, string $field = 'count', array $conditions = [], string $agg = 'sum'): array
+    {
+        $result = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = date('Y-m-d', strtotime("-$i days"));
+            $query = \Core\Database::table($table)
+                ->where("DATE($dateColumn)", '=', $date);
+
+            foreach ($conditions as $condition) {
+                $query->where($condition[0], $condition[1], $condition[2]);
+            }
+
+            if ($agg === 'count') {
+                $value = $query->count();
+            } elseif ($agg === 'sum') {
+                $value = $field === '*' ? $query->count() : $query->sum($field) ?? 0;
+            } else {
+                $value = $query->avg($field) ?? 0;
+            }
+            
+            $result[] = [
+                'date' => $date,
+                'value' => (float) $value
+            ];
+        }
+        return $result;
+    }
+
+    /**
+     * 导出CSV
+     */
+    private function exportCSV(array $data, string $filename): Response
+    {
+        header('Content-Type: text/csv; charset=utf-8');
+        header("Content-Disposition: attachment; filename=$filename.csv");
+        
+        $output = fopen('php://output', 'w');
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+        
+        if (!empty($data)) {
+            fputcsv($output, array_keys((array) $data[0]));
+            foreach ($data as $row) {
+                fputcsv($output, (array) $row);
+            }
+        }
+        
+        fclose($output);
+        exit;
+    }
+
+    /**
+     * 导出Excel
+     */
+    private function exportExcel(array $data, string $filename): Response
+    {
+        $html = '<table border="1">';
+        if (!empty($data)) {
+            $html .= '<tr>';
+            foreach (array_keys((array) $data[0]) as $header) {
+                $html .= "<th>$header</th>";
+            }
+            $html .= '</tr>';
+            
+            foreach ($data as $row) {
+                $html .= '<tr>';
+                foreach ((array) $row as $cell) {
+                    $html .= "<td>$cell</td>";
+                }
+                $html .= '</tr>';
+            }
+        }
+        $html .= '</table>';
+
+        header('Content-Type: application/vnd.ms-excel');
+        header("Content-Disposition: attachment; filename=$filename.xls");
+        echo $html;
+        exit;
+    }
 }

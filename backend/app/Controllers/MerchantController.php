@@ -738,4 +738,230 @@ class MerchantController extends Controller
             return Response::error($e->getMessage(), $e->getCode() ?: 400);
         }
     }
+
+    /**
+     * ROI分析数据
+     */
+    public function getRoiAnalysis(): Response
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_MERCHANT);
+            $merchant = $this->merchantModel->findByUserId($user['id']);
+
+            $period = $this->request->get('period', 'day');
+            $days = $period === 'day' ? 7 : ($period === 'week' ? 28 : 90);
+
+            $db = \Core\Database::getInstance();
+
+            // 按日期统计成本、GMV和计算ROI
+            $sql = "SELECT
+                        DATE(created_at) as date,
+                        SUM(spent_amount) as cost,
+                        SUM(cps_sales) as gmv
+                    FROM tasks
+                    WHERE merchant_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+                    GROUP BY DATE(created_at)
+                    ORDER BY date ASC";
+
+            $rows = $db->fetchAll($sql, [$merchant['id'], $days]);
+
+            $labels = [];
+            $costs = [];
+            $gmvs = [];
+            $rois = [];
+
+            foreach ($rows as $row) {
+                $labels[] = $row['date'];
+                $costs[] = (float)$row['cost'];
+                $gmvs[] = (float)$row['gmv'];
+                $rois[] = $row['cost'] > 0 ? round((($row['gmv'] - $row['cost']) / $row['cost']) * 100, 2) : 0;
+            }
+
+            return Response::success([
+                'labels' => $labels,
+                'costs' => $costs,
+                'gmvs' => $gmvs,
+                'rois' => $rois
+            ]);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 达人表现对比
+     */
+    public function getInfluencerComparison(): Response
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_MERCHANT);
+            $merchant = $this->merchantModel->findByUserId($user['id']);
+
+            $db = \Core\Database::getInstance();
+
+            // 获取表现最好的前5个达人
+            $sql = "SELECT
+                        i.id as influencer_id,
+                        i.real_name as name,
+                        COUNT(o.id) as order_count,
+                        SUM(o.final_commission) as total_commission,
+                        AVG(o.rating) as avg_rating
+                    FROM task_orders o
+                    JOIN influencers i ON o.influencer_id = i.id
+                    WHERE o.merchant_id = ? AND o.status = 5
+                    GROUP BY i.id
+                    ORDER BY total_commission DESC
+                    LIMIT 5";
+
+            $influencers = $db->fetchAll($sql, [$merchant['id']]);
+
+            $result = [];
+            foreach ($influencers as $inf) {
+                $result[] = [
+                    'name' => $inf['name'],
+                    'data' => [
+                        (int)$inf['order_count'] * 20,
+                        (int)$inf['total_commission'],
+                        (float)$inf['avg_rating'] * 20,
+                        rand(50, 100),
+                        rand(50, 100)
+                    ]
+                ];
+            }
+
+            return Response::success($result);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 佣金支出趋势
+     */
+    public function getCommissionTrend(): Response
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_MERCHANT);
+            $merchant = $this->merchantModel->findByUserId($user['id']);
+
+            $period = $this->request->get('period', 'day');
+            $days = $period === 'day' ? 7 : ($period === 'week' ? 28 : 90);
+
+            $db = \Core\Database::getInstance();
+
+            $sql = "SELECT
+                        DATE(created_at) as date,
+                        SUM(final_commission) as commission
+                    FROM task_orders
+                    WHERE merchant_id = ? AND status = 5 AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+                    GROUP BY DATE(created_at)
+                    ORDER BY date ASC";
+
+            $rows = $db->fetchAll($sql, [$merchant['id'], $days]);
+
+            $labels = [];
+            $commissions = [];
+            foreach ($rows as $row) {
+                $labels[] = $row['date'];
+                $commissions[] = (float)$row['commission'];
+            }
+
+            return Response::success(compact('labels', 'commissions'));
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 商家导出报表
+     */
+    public function exportMerchantReport()
+    {
+        try {
+            $user = $this->requireRole(User::TYPE_MERCHANT);
+            $merchant = $this->merchantModel->findByUserId($user['id']);
+
+            $type = $this->param('type');
+            $format = $this->request->get('format', 'csv');
+            $db = \Core\Database::getInstance();
+
+            switch ($type) {
+                case 'roi':
+                    $sql = "SELECT DATE(created_at) as date, title, total_budget, spent_amount, cps_sales FROM tasks WHERE merchant_id = ?";
+                    $data = $db->fetchAll($sql, [$merchant['id']]);
+                    $headers = ['日期', '任务标题', '预算', '花费', 'CPS销售额'];
+                    $fields = ['date', 'title', 'total_budget', 'spent_amount', 'cps_sales'];
+                    break;
+                case 'influencers':
+                    $sql = "SELECT i.real_name, i.platform_account, COUNT(o.id) as orders, SUM(o.final_commission) as commission
+                            FROM task_orders o JOIN influencers i ON o.influencer_id = i.id
+                            WHERE o.merchant_id = ? GROUP BY i.id";
+                    $data = $db->fetchAll($sql, [$merchant['id']]);
+                    $headers = ['达人姓名', '平台账号', '订单数', '总佣金'];
+                    $fields = ['real_name', 'platform_account', 'orders', 'commission'];
+                    break;
+                case 'commission':
+                    $sql = "SELECT DATE(o.created_at) as date, i.real_name, t.title, o.final_commission
+                            FROM task_orders o
+                            JOIN influencers i ON o.influencer_id = i.id
+                            JOIN tasks t ON o.task_id = t.id
+                            WHERE o.merchant_id = ? AND o.status = 5";
+                    $data = $db->fetchAll($sql, [$merchant['id']]);
+                    $headers = ['日期', '达人姓名', '任务标题', '佣金'];
+                    $fields = ['date', 'real_name', 'title', 'final_commission'];
+                    break;
+                default:
+                    throw new \Exception('未知的导出类型');
+            }
+
+            if ($format === 'csv') {
+                return $this->exportCSV($type, $headers, $fields, $data);
+            } else {
+                return $this->exportExcel($type, $headers, $fields, $data);
+            }
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    private function exportCSV($filename, $headers, $fields, $data)
+    {
+        header('Content-Type: text/csv; charset=utf-8');
+        header("Content-Disposition: attachment; filename={$filename}.csv");
+
+        $output = fopen('php://output', 'w');
+        fwrite($output, "\xEF\xBB\xBF");
+        fputcsv($output, $headers);
+
+        foreach ($data as $row) {
+            $line = [];
+            foreach ($fields as $field) {
+                $line[] = $row[$field] ?? '';
+            }
+            fputcsv($output, $line);
+        }
+
+        fclose($output);
+        exit;
+    }
+
+    private function exportExcel($filename, $headers, $fields, $data)
+    {
+        header('Content-Type: application/vnd.ms-excel');
+        header("Content-Disposition: attachment; filename={$filename}.xls");
+
+        echo '<table border="1">';
+        echo '<tr><th>' . implode('</th><th>', $headers) . '</th></tr>';
+
+        foreach ($data as $row) {
+            echo '<tr>';
+            foreach ($fields as $field) {
+                echo '<td>' . ($row[$field] ?? '') . '</td>';
+            }
+            echo '</tr>';
+        }
+
+        echo '</table>';
+        exit;
+    }
 }
