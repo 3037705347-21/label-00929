@@ -81,6 +81,12 @@ $router->group('/api/merchant', function($router) {
     $router->get('/dashboard', 'MerchantController@dashboard');
     $router->get('/statistics', 'MerchantController@statistics');
 
+    // 报表分析
+    $router->get('/reports/trend', 'ReportController@merchantTrendData');
+    $router->get('/reports/roi', 'ReportController@merchantROI');
+    $router->get('/reports/influencers', 'ReportController@influencerComparison');
+    $router->get('/reports/commission', 'ReportController@commissionDetail');
+
     // 财务管理
     $router->get('/wallet', 'MerchantController@wallet');
     $router->post('/wallet/recharge', 'MerchantController@recharge');
@@ -120,6 +126,11 @@ $router->group('/api/influencer', function($router) {
     $router->get('/earnings', 'InfluencerController@earnings');
     $router->post('/wallet/withdraw', 'InfluencerController@withdraw');
     $router->get('/withdrawals', 'InfluencerController@withdrawals');
+
+    // 报表分析
+    $router->get('/reports/trend', 'ReportController@influencerTrendData');
+    $router->get('/reports/earnings', 'ReportController@influencerEarnings');
+    $router->get('/reports/works', 'ReportController@influencerWorkStats');
 
     // 消息
     $router->get('/messages', 'InfluencerController@messages');
@@ -193,6 +204,16 @@ $router->group('/api/admin', function($router) {
 
     // 操作日志
     $router->get('/logs', 'AdminController@logList');
+
+    // 报表分析
+    $router->get('/reports/trend', 'ReportController@trendData');
+    $router->get('/reports/gmv', 'ReportController@platformGMV');
+    $router->get('/reports/funnel', 'ReportController@userGrowthFunnel');
+
+    // 数据导出
+    $router->get('/export/transactions', 'ReportController@exportTransactions');
+    $router->get('/export/orders', 'ReportController@exportOrders');
+    $router->get('/export/withdrawals', 'ReportController@exportWithdrawals');
 });
 
 return $router;

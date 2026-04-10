@@ -6,6 +6,129 @@
     <title>达人中心 - 探店达人营销平台</title>
     <link rel="stylesheet" href="/assets/css/common.css">
     <link rel="stylesheet" href="/influencer/assets/css/influencer.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+        .chart-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .chart-tab {
+            padding: 6px 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #fff;
+            transition: all 0.3s;
+        }
+        .chart-tab.active {
+            background: #1890ff;
+            color: #fff;
+            border-color: #1890ff;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-item.views {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .stat-item.likes {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .stat-item.works {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        .work-stats-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .work-stats-table th,
+        .work-stats-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .work-stats-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+        }
+        .work-stats-table tr:hover {
+            background: #f9f9f9;
+        }
+        .platform-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .platform-tag.douyin {
+            background: #000;
+            color: #fff;
+        }
+        .platform-tag.xiaohongshu {
+            background: #ff2442;
+            color: #fff;
+        }
+        .platform-tag.kuaishou {
+            background: #ff6600;
+            color: #fff;
+        }
+        .platform-tag.bilibili {
+            background: #00a1d6;
+            color: #fff;
+        }
+        .rate-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .rate-badge.high {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .rate-badge.medium {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+        .rate-badge.low {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .export-btn {
+            float: right;
+        }
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="layout">
@@ -100,6 +223,74 @@
                     </div>
                 </div>
 
+                <!-- 收益趋势 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">📈 收益趋势</h3>
+                        <div class="chart-tabs">
+                            <div class="chart-tab active" onclick="switchTrendType('day')">日</div>
+                            <div class="chart-tab" onclick="switchTrendType('week')">周</div>
+                            <div class="chart-tab" onclick="switchTrendType('month')">月</div>
+                        </div>
+                    </div>
+                    <div id="earningsChart" class="chart-container"></div>
+                </div>
+
+                <!-- 作品数据概览 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">🎬 作品数据概览</h3>
+                        <button class="btn btn-secondary btn-sm export-btn" onclick="exportWorkStats()">导出数据</button>
+                    </div>
+                    <div class="stats-grid" id="workStatsGrid">
+                        <div class="stat-item works">
+                            <div class="stat-value" id="totalWorks">0</div>
+                            <div class="stat-label">作品总数</div>
+                        </div>
+                        <div class="stat-item views">
+                            <div class="stat-value" id="totalViews">0</div>
+                            <div class="stat-label">总播放量</div>
+                        </div>
+                        <div class="stat-item likes">
+                            <div class="stat-value" id="totalLikes">0</div>
+                            <div class="stat-label">总点赞</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="avgEngagement">0%</div>
+                            <div class="stat-label">平均互动率</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 作品数据分析 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">📊 作品数据分析</h3>
+                        <button class="btn btn-secondary btn-sm export-btn" onclick="exportWorkDetail()">导出明细</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="work-stats-table" id="workStatsTable">
+                            <thead>
+                                <tr>
+                                    <th>任务</th>
+                                    <th>平台</th>
+                                    <th>播放量</th>
+                                    <th>点赞</th>
+                                    <th>评论</th>
+                                    <th>互动率</th>
+                                    <th>CPM</th>
+                                    <th>收益</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="8" class="text-center text-secondary">暂无数据</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- 快捷操作 -->
                 <div class="card mb-lg">
                     <div class="card-header">
@@ -168,7 +359,246 @@
     </div>
 
     <script src="/assets/js/common.js"></script>
+    <script src="/assets/js/export.js"></script>
     <script>
+        // 图表实例
+        let earningsChart;
+        let currentTrendType = 'day';
+        let workStatsData = [];
+
+        // 初始化图表
+        function initCharts() {
+            earningsChart = echarts.init(document.getElementById('earningsChart'));
+            window.addEventListener('resize', function() {
+                earningsChart && earningsChart.resize();
+            });
+        }
+
+        // 切换趋势类型
+        function switchTrendType(type) {
+            currentTrendType = type;
+            document.querySelectorAll('.chart-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            loadEarningsTrend();
+        }
+
+        // 加载收益趋势
+        async function loadEarningsTrend() {
+            try {
+                const res = await get('/influencer/reports/earnings', { type: currentTrendType });
+                if (res.code === 0) {
+                    renderEarningsChart(res.data.trend);
+                    updateEarningsSummary(res.data.summary);
+                }
+            } catch (err) {
+                console.error('加载收益趋势失败:', err);
+            }
+        }
+
+        // 渲染收益图表
+        function renderEarningsChart(trend) {
+            const dates = trend.map(item => item.date);
+            const earningsData = trend.map(item => parseFloat(item.earnings || 0));
+            const orderData = trend.map(item => parseInt(item.order_count || 0));
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'cross' }
+                },
+                legend: {
+                    data: ['收益', '订单数']
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: dates
+                },
+                yAxis: [
+                    {
+                        type: 'value',
+                        name: '收益',
+                        position: 'left',
+                        axisLabel: {
+                            formatter: '¥{value}'
+                        }
+                    },
+                    {
+                        type: 'value',
+                        name: '订单数',
+                        position: 'right'
+                    }
+                ],
+                series: [
+                    {
+                        name: '收益',
+                        type: 'line',
+                        smooth: true,
+                        data: earningsData,
+                        itemStyle: { color: '#91cc75' },
+                        areaStyle: { 
+                            color: {
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [
+                                    { offset: 0, color: 'rgba(145, 204, 117, 0.3)' },
+                                    { offset: 1, color: 'rgba(145, 204, 117, 0.05)' }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        name: '订单数',
+                        type: 'bar',
+                        yAxisIndex: 1,
+                        data: orderData,
+                        itemStyle: { color: '#5470c6' }
+                    }
+                ]
+            };
+
+            earningsChart.setOption(option);
+        }
+
+        // 更新收益汇总
+        function updateEarningsSummary(summary) {
+            document.getElementById('statTotalEarnings').textContent = formatMoney(summary.total_earnings || 0);
+            document.getElementById('statMonthEarnings').textContent = '本月: ¥' + formatMoney(summary.month_earnings || 0);
+        }
+
+        // 加载作品统计数据
+        async function loadWorkStats() {
+            try {
+                const res = await get('/influencer/reports/works');
+                if (res.code === 0) {
+                    workStatsData = res.data.works || [];
+                    updateWorkStatsSummary(res.data.summary);
+                    renderWorkStatsTable();
+                }
+            } catch (err) {
+                console.error('加载作品统计失败:', err);
+            }
+        }
+
+        // 更新作品统计汇总
+        function updateWorkStatsSummary(summary) {
+            document.getElementById('totalWorks').textContent = summary.total_works || 0;
+            document.getElementById('totalViews').textContent = formatNumber(summary.total_views || 0);
+            document.getElementById('totalLikes').textContent = formatNumber(summary.total_likes || 0);
+            
+            const avgViews = summary.avg_views || 0;
+            const avgLikes = summary.avg_likes || 0;
+            const engagementRate = avgViews > 0 ? ((avgLikes / avgViews) * 100).toFixed(2) : 0;
+            document.getElementById('avgEngagement').textContent = engagementRate + '%';
+        }
+
+        // 渲染作品统计表格
+        function renderWorkStatsTable() {
+            const tbody = document.querySelector('#workStatsTable tbody');
+            if (!workStatsData.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-secondary">暂无数据</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = workStatsData.map(work => {
+                const engagementRate = work.view_count > 0 ? ((work.like_count / work.view_count) * 100).toFixed(2) : 0;
+                let rateClass = 'low';
+                if (engagementRate >= 5) rateClass = 'high';
+                else if (engagementRate >= 2) rateClass = 'medium';
+
+                const platformClass = getPlatformClass(work.platform);
+
+                return `
+                <tr>
+                    <td>
+                        <div style="font-weight: 500;">${work.task_title}</div>
+                        <div style="font-size: 12px; color: #999;">${formatDate(work.created_at)}</div>
+                    </td>
+                    <td><span class="platform-tag ${platformClass}">${work.platform || '-'}</span></td>
+                    <td>${formatNumber(work.view_count || 0)}</td>
+                    <td>${formatNumber(work.like_count || 0)}</td>
+                    <td>${formatNumber(work.comment_count || 0)}</td>
+                    <td><span class="rate-badge ${rateClass}">${engagementRate}%</span></td>
+                    <td>${work.cpm ? work.cpm.toFixed(2) : '-'}</td>
+                    <td style="color: #52c41a; font-weight: 500;">¥${formatMoney(work.earnings || 0)}</td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        function getPlatformClass(platform) {
+            if (!platform) return '';
+            const p = platform.toLowerCase();
+            if (p.includes('douyin') || p.includes('抖音')) return 'douyin';
+            if (p.includes('xiaohongshu') || p.includes('小红书')) return 'xiaohongshu';
+            if (p.includes('kuaishou') || p.includes('快手')) return 'kuaishou';
+            if (p.includes('bilibili') || p.includes('b站')) return 'bilibili';
+            return '';
+        }
+
+        function formatNumber(num) {
+            if (num >= 100000000) {
+                return (num / 100000000).toFixed(1) + '亿';
+            }
+            if (num >= 10000) {
+                return (num / 10000).toFixed(1) + '万';
+            }
+            return num.toString();
+        }
+
+        // 导出功能
+        function exportWorkStats() {
+            const totalWorks = document.getElementById('totalWorks').textContent;
+            if (totalWorks === '0' || totalWorks === '-') {
+                showToast('暂无数据可导出', 'warning');
+                return;
+            }
+            
+            const summary = {
+                total_works: totalWorks,
+                total_views: document.getElementById('totalViews').textContent,
+                total_likes: document.getElementById('totalLikes').textContent,
+                avg_engagement: document.getElementById('avgEngagement').textContent
+            };
+            
+            const data = [{
+                '作品总数': summary.total_works,
+                '总播放量': summary.total_views,
+                '总点赞': summary.total_likes,
+                '平均互动率': summary.avg_engagement
+            }];
+            
+            exportToCSV(data, '作品数据概览_' + formatDate(new Date()));
+        }
+
+        function exportWorkDetail() {
+            if (!workStatsData.length) {
+                showToast('暂无数据可导出', 'warning');
+                return;
+            }
+            
+            const data = workStatsData.map(work => ({
+                '任务名称': work.task_title,
+                '平台': work.platform,
+                '发布时间': work.created_at,
+                '播放量': work.view_count,
+                '点赞数': work.like_count,
+                '评论数': work.comment_count,
+                '分享数': work.share_count,
+                '互动率': work.view_count > 0 ? ((work.like_count / work.view_count) * 100).toFixed(2) + '%' : '0%',
+                'CPM': work.cpm || 0,
+                '收益': work.earnings || 0
+            }));
+            
+            exportToCSV(data, '作品数据分析_' + formatDate(new Date()));
+        }
+
         // 加载用户信息和统计
         async function loadDashboard() {
             try {
@@ -318,9 +748,12 @@
         }
 
         // 初始化
+        initCharts();
         loadDashboard();
         loadRecommendTasks();
         loadRecentOrders();
+        loadEarningsTrend();
+        loadWorkStats();
 
         // 侧边栏切换
         function toggleSidebar() {
