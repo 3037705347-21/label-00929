@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分类管理 - 管理后台</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/admin/assets/css/admin.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- 遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/admin/index.html" class="sidebar-logo">🔐 管理后台</a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/admin/index.html" class="nav-item"><span class="nav-icon">📊</span><span>数据看板</span></a>
+                <div class="nav-group">
+                    <div class="nav-group-title">用户管理</div>
+                    <a href="/admin/merchants.html" class="nav-item"><span class="nav-icon">🏪</span><span>商家管理</span></a>
+                    <a href="/admin/influencers.html" class="nav-item"><span class="nav-icon">🎬</span><span>达人管理</span></a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">内容管理</div>
+                    <a href="/admin/tasks.html" class="nav-item"><span class="nav-icon">📋</span><span>任务审核</span></a>
+                    <a href="/admin/works.html" class="nav-item"><span class="nav-icon">🎨</span><span>作品审核</span></a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">财务管理</div>
+                    <a href="/admin/withdrawals.html" class="nav-item"><span class="nav-icon">💳</span><span>提现审核</span></a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">系统设置</div>
+                    <a href="/admin/categories.html" class="nav-item active"><span class="nav-icon">📁</span><span>分类管理</span></a>
+                    <a href="/admin/settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span>系统配置</span></a>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="page-title">分类管理</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-dropdown">
+                        <div class="user-info" onclick="toggleDropdown()">
+                            <div class="user-avatar" id="userAvatar"></div>
+                            <span class="user-name" id="userName">管理员</span>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="javascript:logout()" class="dropdown-item danger"><span>🚪</span><span>退出登录</span></a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <div class="card">
+                    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                        <h3 class="card-title">商家分类</h3>
+                        <button class="btn btn-primary" onclick="showAddModal()">+ 添加分类</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>图标</th>
+                                    <th>分类名称</th>
+                                    <th>排序</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoryList">
+                                <tr><td colspan="6" class="text-center text-secondary">加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 添加/编辑分类弹窗 -->
+    <div class="modal-overlay" id="categoryModal">
+        <div class="modal" style="max-width:500px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">添加分类</h3>
+                <button class="modal-close" onclick="closeModal('categoryModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="categoryForm">
+                    <input type="hidden" id="categoryId">
+                    <div class="form-group">
+                        <label class="form-label">分类名称 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="categoryName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">图标（Emoji）</label>
+                        <input type="text" class="form-control" id="categoryIcon" placeholder="如：🍜">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">排序</label>
+                        <input type="number" class="form-control" id="categorySortOrder" value="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('categoryModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveCategory()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        const user = getUser();
+        if (!user || user.user_type != 3) window.location.href = '/admin/login.html';
+
+        function toggleDropdown() { document.getElementById('dropdownMenu').classList.toggle('show'); }
+        document.addEventListener('click', e => { if (!e.target.closest('.user-dropdown')) document.getElementById('dropdownMenu').classList.remove('show'); });
+
+        function loadUserInfo() {
+            if (user) {
+                document.getElementById('userName').textContent = user.username;
+                setUserAvatar(document.getElementById('userAvatar'), user.avatar);
+            }
+        }
+
+        async function loadCategories() {
+            try {
+                const res = await get('/admin/categories');
+                if (res.code === 0) {
+                    renderCategories(res.data);
+                }
+            } catch (err) { showToast('加载失败', 'error'); }
+        }
+
+        // 图标映射表：旧格式 -> emoji
+        const iconMap = {
+            'icon-food': '🍜',
+            'icon-entertainment': '🎮',
+            'icon-beauty': '💇',
+            'icon-hotel': '🏨',
+            'icon-baby': '👶',
+            'icon-sport': '🏃',
+            'icon-health': '🏥',
+            'icon-education': '📚'
+        };
+
+        function getCategoryIcon(icon) {
+            if (!icon) return '📁';
+            // 如果是旧的icon-xxx格式，转换为emoji
+            if (icon.startsWith('icon-')) {
+                return iconMap[icon] || '📁';
+            }
+            return icon;
+        }
+
+        function renderCategories(categories) {
+            const tbody = document.getElementById('categoryList');
+            if (!categories.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-secondary">暂无数据</td></tr>';
+                return;
+            }
+            tbody.innerHTML = categories.map(c => `
+                <tr>
+                    <td>${c.id}</td>
+                    <td style="font-size:24px;">${getCategoryIcon(c.icon)}</td>
+                    <td>${c.name}</td>
+                    <td>${c.sort_order || 0}</td>
+                    <td>${c.status == 1 ? '<span class="tag tag-success">启用</span>' : '<span class="tag">禁用</span>'}</td>
+                    <td>
+                        <button class="btn btn-sm" onclick='editCategory(${JSON.stringify(c)})'>编辑</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteCategory(${c.id})">删除</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function showAddModal() {
+            document.getElementById('modalTitle').textContent = '添加分类';
+            document.getElementById('categoryId').value = '';
+            document.getElementById('categoryName').value = '';
+            document.getElementById('categoryIcon').value = '';
+            document.getElementById('categorySortOrder').value = '0';
+            openModal('categoryModal');
+        }
+
+        function editCategory(c) {
+            document.getElementById('modalTitle').textContent = '编辑分类';
+            document.getElementById('categoryId').value = c.id;
+            document.getElementById('categoryName').value = c.name || '';
+            // 如果是旧的icon-xxx格式，显示为空让用户重新输入emoji
+            document.getElementById('categoryIcon').value = (c.icon && !c.icon.startsWith('icon-')) ? c.icon : '';
+            document.getElementById('categorySortOrder').value = c.sort_order || 0;
+            openModal('categoryModal');
+        }
+
+        async function saveCategory() {
+            const id = document.getElementById('categoryId').value;
+            const name = document.getElementById('categoryName').value.trim();
+            const icon = document.getElementById('categoryIcon').value.trim();
+            const sortOrder = parseInt(document.getElementById('categorySortOrder').value) || 0;
+
+            if (!name) {
+                showToast('请输入分类名称', 'error');
+                return;
+            }
+
+            try {
+                let res;
+                if (id) {
+                    res = await put(`/admin/categories/${id}`, { name, icon, sort_order: sortOrder });
+                } else {
+                    res = await post('/admin/categories', { name, icon, sort_order: sortOrder });
+                }
+                if (res.code === 0) {
+                    showToast(id ? '更新成功' : '添加成功');
+                    closeModal('categoryModal');
+                    loadCategories();
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } catch (err) { showToast('操作失败', 'error'); }
+        }
+
+        async function deleteCategory(id) {
+            if (!await confirm('确定删除该分类吗？')) return;
+            try {
+                const res = await del(`/admin/categories/${id}`);
+                if (res.code === 0) {
+                    showToast('删除成功');
+                    loadCategories();
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } catch (err) { showToast('操作失败', 'error'); }
+        }
+
+        loadUserInfo();
+        loadCategories();
+
+        // 侧边栏切换
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

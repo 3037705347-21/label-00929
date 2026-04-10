@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>收益中心 - 达人中心</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/influencer/assets/css/influencer.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- 遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/influencer/index.html" class="sidebar-logo">🔥 探店达人</a>
+                <span class="sidebar-badge">达人版</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/influencer/index.html" class="nav-item"><span class="nav-icon">🏠</span><span>首页</span></a>
+                <a href="/influencer/tasks.html" class="nav-item"><span class="nav-icon">📋</span><span>任务大厅</span></a>
+                <a href="/influencer/orders.html" class="nav-item"><span class="nav-icon">📦</span><span>我的订单</span></a>
+                <a href="/influencer/wallet.html" class="nav-item active"><span class="nav-icon">💰</span><span>收益中心</span></a>
+                <a href="/influencer/profile.html" class="nav-item"><span class="nav-icon">👤</span><span>个人资料</span></a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="page-title">收益中心</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-dropdown">
+                        <div class="user-info" onclick="toggleDropdown()">
+                            <div class="user-avatar" id="userAvatar"></div>
+                            <span class="user-name" id="userName">达人</span>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="javascript:logout()" class="dropdown-item danger">
+                                <span>🚪</span>
+                                <span>退出登录</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <div class="grid grid-3 mb-lg">
+                    <div class="stat-card">
+                        <div class="stat-card-icon balance">💰</div>
+                        <div class="stat-card-value" id="balance">0.00</div>
+                        <div class="stat-card-label">可提现余额（元）</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon orders">🔒</div>
+                        <div class="stat-card-value" id="frozen">0.00</div>
+                        <div class="stat-card-label">冻结金额（元）</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon earnings">💳</div>
+                        <div class="stat-card-value" id="totalIncome">0.00</div>
+                        <div class="stat-card-label">累计收益（元）</div>
+                    </div>
+                </div>
+
+                <div class="card mb-md">
+                    <div class="card-header">
+                        <h3 class="card-title">申请提现</h3>
+                    </div>
+                    <form id="withdrawForm">
+                        <div class="grid grid-2 gap-md">
+                            <div class="form-group">
+                                <label class="form-label required">提现金额</label>
+                                <input type="number" class="form-control" name="amount" id="withdrawAmount" placeholder="请输入提现金额" min="1" step="0.01" required>
+                                <div class="form-hint" id="withdrawHint">最低提现金额：加载中...</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">提现方式</label>
+                                <select class="form-control" name="withdraw_type">
+                                    <option value="1">银行卡</option>
+                                    <option value="2">支付宝</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">账户名</label>
+                                <input type="text" class="form-control" name="account_name" placeholder="请输入真实姓名" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">账号</label>
+                                <input type="text" class="form-control" name="account_no" placeholder="请输入银行卡号/支付宝账号" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">开户银行</label>
+                                <input type="text" class="form-control" name="bank_name" placeholder="如：中国工商银行">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">提交申请</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">提现记录</h3>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>提现单号</th>
+                                    <th>金额</th>
+                                    <th>手续费</th>
+                                    <th>实际到账</th>
+                                    <th>状态</th>
+                                    <th>申请时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawalList">
+                                <tr><td colspan="6" class="text-center text-secondary">暂无记录</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="pagination"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        // 系统配置
+        let withdrawSettings = {
+            min_withdraw_amount: 100,
+            max_withdraw_amount: 50000,
+            withdraw_fee_rate: 0.5
+        };
+
+        // 加载系统配置
+        async function loadSettings() {
+            try {
+                const res = await get('/settings');
+                if (res.code === 0) {
+                    withdrawSettings = res.data;
+                    const amountInput = document.getElementById('withdrawAmount');
+                    amountInput.min = withdrawSettings.min_withdraw_amount;
+                    amountInput.max = withdrawSettings.max_withdraw_amount;
+                    amountInput.placeholder = `最低${withdrawSettings.min_withdraw_amount}元`;
+
+                    const hint = document.getElementById('withdrawHint');
+                    hint.textContent = `最低${withdrawSettings.min_withdraw_amount}元，最高${withdrawSettings.max_withdraw_amount}元，手续费${withdrawSettings.withdraw_fee_rate}%`;
+                }
+            } catch (err) {
+                console.error('加载配置失败', err);
+            }
+        }
+
+        async function loadWallet() {
+            const res = await get('/influencer/wallet');
+            if (res.code === 0) {
+                document.getElementById('balance').textContent = formatMoney(res.data.balance);
+                document.getElementById('frozen').textContent = formatMoney(res.data.frozen_amount);
+                document.getElementById('totalIncome').textContent = formatMoney(res.data.total_income);
+            }
+        }
+
+        async function loadWithdrawals(page = 1) {
+            const res = await get('/influencer/withdrawals', { page });
+            if (res.code === 0 && res.data.items.length > 0) {
+                document.getElementById('withdrawalList').innerHTML = res.data.items.map(w => `
+                    <tr>
+                        <td>${w.withdraw_no}</td>
+                        <td>¥${formatMoney(w.amount)}</td>
+                        <td>¥${formatMoney(w.fee)}</td>
+                        <td>¥${formatMoney(w.actual_amount)}</td>
+                        <td>${getStatusTag(w.status, 'withdrawal')}</td>
+                        <td>${formatDate(w.created_at, 'YYYY-MM-DD HH:mm')}</td>
+                    </tr>
+                `).join('');
+                renderPagination(document.getElementById('pagination'), res.data.pagination, loadWithdrawals);
+            }
+        }
+
+        document.getElementById('withdrawForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            // 前端校验
+            const amount = parseFloat(data.amount);
+            if (amount < withdrawSettings.min_withdraw_amount) {
+                showToast(`最低提现金额为${withdrawSettings.min_withdraw_amount}元`, 'error');
+                return;
+            }
+            if (amount > withdrawSettings.max_withdraw_amount) {
+                showToast(`单次最高提现金额为${withdrawSettings.max_withdraw_amount}元`, 'error');
+                return;
+            }
+
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+
+            try {
+                const res = await post('/influencer/wallet/withdraw', data);
+                if (res.code === 0) {
+                    showToast('提现申请已提交');
+                    e.target.reset();
+                    loadWallet();
+                    loadWithdrawals();
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        // 初始化
+        loadSettings();
+        loadWallet();
+        loadWithdrawals();
+
+        // 侧边栏切换
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+
+        // 下拉菜单切换
+        function toggleDropdown() {
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-dropdown')) {
+                document.getElementById('dropdownMenu').classList.remove('show');
+            }
+        });
+
+        // 加载用户信息
+        async function loadUserInfo() {
+            try {
+                const res = await get('/auth/profile');
+                if (res.code === 0) {
+                    const { user, influencer } = res.data;
+                    document.getElementById('userName').textContent = influencer?.nickname || user?.username || '达人';
+                    setUserAvatar(document.getElementById('userAvatar'), user?.avatar);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        loadUserInfo();
+    </script>
+</body>
+</html>

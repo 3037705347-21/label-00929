@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 探店达人营销平台</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8F5E 100%);
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            padding: var(--spacing-lg);
+        }
+
+        .login-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .login-logo h1 {
+            font-size: 28px;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .login-logo p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .login-tabs {
+            display: flex;
+            margin-bottom: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .login-tab {
+            flex: 1;
+            padding: var(--spacing-md);
+            text-align: center;
+            cursor: pointer;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .login-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .login-form {
+            display: none;
+        }
+
+        .login-form.active {
+            display: block;
+        }
+
+        .user-type-select {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .user-type-option {
+            flex: 1;
+            padding: var(--spacing-md);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .user-type-option:hover {
+            border-color: var(--primary-color);
+        }
+
+        .user-type-option.active {
+            border-color: var(--primary-color);
+            background: var(--primary-light);
+        }
+
+        .user-type-option i {
+            font-size: 24px;
+            margin-bottom: var(--spacing-xs);
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-logo">
+                <h1>🔥 探店达人</h1>
+                <p>连接商家与达人的营销平台</p>
+            </div>
+
+            <div class="login-tabs">
+                <div class="login-tab active" data-tab="login">登录</div>
+                <div class="login-tab" data-tab="register">注册</div>
+            </div>
+
+            <!-- 登录表单 -->
+            <form class="login-form active" id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">用户名/手机号</label>
+                    <input type="text" class="form-control" name="username" placeholder="请输入用户名或手机号" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">密码</label>
+                    <input type="password" class="form-control" name="password" placeholder="请输入密码" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg">登 录</button>
+            </form>
+
+            <!-- 注册表单 -->
+            <form class="login-form" id="registerForm">
+                <div class="form-group">
+                    <label class="form-label">我是</label>
+                    <div class="user-type-select">
+                        <div class="user-type-option active" data-type="1">
+                            <span>🏪</span>
+                            <span>商家</span>
+                        </div>
+                        <div class="user-type-option" data-type="2">
+                            <span>🎬</span>
+                            <span>达人</span>
+                        </div>
+                    </div>
+                    <input type="hidden" name="user_type" value="1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">用户名</label>
+                    <input type="text" class="form-control" name="username" placeholder="请输入用户名" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">手机号</label>
+                    <input type="tel" class="form-control" name="phone" placeholder="请输入手机号" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">密码</label>
+                    <input type="password" class="form-control" name="password" placeholder="请输入密码（至少6位）" required minlength="6">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg">注 册</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        // Tab 切换
+        function switchTab(tabName) {
+            document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
+
+            const tab = document.querySelector(`.login-tab[data-tab="${tabName}"]`);
+            if (tab) {
+                tab.classList.add('active');
+                document.getElementById(tabName + 'Form').classList.add('active');
+            }
+        }
+
+        document.querySelectorAll('.login-tab').forEach(tab => {
+            tab.onclick = () => switchTab(tab.dataset.tab);
+        });
+
+        // 检查 URL 参数，自动切换到对应 tab
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam === 'register') {
+            switchTab('register');
+        }
+
+        // 用户类型选择
+        document.querySelectorAll('.user-type-option').forEach(option => {
+            option.onclick = () => {
+                document.querySelectorAll('.user-type-option').forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+                document.querySelector('input[name="user_type"]').value = option.dataset.type;
+            };
+        });
+
+        // 登录
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = '登录中...';
+
+            try {
+                const res = await post('/auth/login', data);
+
+                if (res.code === 0) {
+                    const userType = res.data.user.user_type;
+                    // 根据用户类型存储到对应端的 token
+                    const portalMap = { 1: 'merchant', 2: 'influencer', 3: 'admin' };
+                    const portal = portalMap[userType] || 'default';
+                    localStorage.setItem(`token_${portal}`, res.data.token);
+                    localStorage.setItem(`user_${portal}`, JSON.stringify(res.data.user));
+
+                    showToast('登录成功');
+
+                    // 根据用户类型跳转
+                    if (userType === 1) {
+                        window.location.href = '/merchant/index.html';
+                    } else if (userType === 2) {
+                        window.location.href = '/influencer/index.html';
+                    } else {
+                        window.location.href = '/admin/index.html';
+                    }
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } catch (err) {
+                showToast('登录失败', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '登 录';
+            }
+        };
+
+        // 注册
+        document.getElementById('registerForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = '注册中...';
+
+            try {
+                const res = await post('/auth/register', data);
+
+                if (res.code === 0) {
+                    // 注册成功，提示等待审核，不自动登录
+                    showToast('注册成功，请等待管理员审核后登录', 'success');
+                    // 切换到登录tab
+                    switchTab('login');
+                    // 清空注册表单
+                    e.target.reset();
+                    document.querySelector('input[name="user_type"]').value = '1';
+                    document.querySelectorAll('.user-type-option').forEach(o => o.classList.remove('active'));
+                    document.querySelector('.user-type-option[data-type="1"]').classList.add('active');
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } catch (err) {
+                showToast('注册失败', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '注 册';
+            }
+        };
+    </script>
+</body>
+</html>

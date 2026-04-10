@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>店铺设置 - 商家中心</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/merchant/assets/css/merchant.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- 遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/merchant/index.html" class="sidebar-logo">🔥 探店达人</a>
+                <span class="sidebar-badge">商家版</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/merchant/index.html" class="nav-item"><span class="nav-icon">📊</span><span>数据看板</span></a>
+                <a href="/merchant/tasks.html" class="nav-item"><span class="nav-icon">📋</span><span>任务管理</span></a>
+                <a href="/merchant/orders.html" class="nav-item"><span class="nav-icon">📦</span><span>订单管理</span></a>
+                <a href="/merchant/wallet.html" class="nav-item"><span class="nav-icon">💰</span><span>财务中心</span></a>
+                <a href="/merchant/profile.html" class="nav-item active"><span class="nav-icon">🏪</span><span>店铺设置</span></a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="page-title">店铺设置</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-dropdown">
+                        <div class="user-info" onclick="toggleDropdown()">
+                            <div class="user-avatar" id="userAvatar"></div>
+                            <span class="user-name" id="userName">商家</span>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="javascript:logout()" class="dropdown-item danger">
+                                <span>🚪</span>
+                                <span>退出登录</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <div class="form-page">
+                    <form id="profileForm" novalidate>
+                        <div class="form-section">
+                            <h3 class="form-section-title" data-icon="🏪">基本信息</h3>
+                            <div class="form-group">
+                                <label class="form-label required"><span class="label-icon">📝</span>店铺名称</label>
+                                <input type="text" class="form-control" name="shop_name" placeholder="请输入店铺名称">
+                                <span class="form-error">请输入店铺名称</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><span class="label-icon">📄</span>店铺简介</label>
+                                <textarea class="form-control" name="description" rows="3" placeholder="请输入店铺简介，让达人更了解您的店铺"></textarea>
+                                <span class="form-error"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3 class="form-section-title" data-icon="📞">联系方式</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label"><span class="label-icon">👤</span>联系人</label>
+                                    <input type="text" class="form-control" name="contact_name" placeholder="请输入联系人姓名">
+                                    <span class="form-error"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label"><span class="label-icon">📱</span>联系电话</label>
+                                    <input type="tel" class="form-control" name="contact_phone" placeholder="请输入联系电话">
+                                    <span class="form-error">请输入正确的手机号码</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3 class="form-section-title" data-icon="📍">店铺地址</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label"><span class="label-icon">🏠</span>省份</label>
+                                    <input type="text" class="form-control" name="province" placeholder="请输入省份">
+                                    <span class="form-error"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label"><span class="label-icon">🏙️</span>城市</label>
+                                    <input type="text" class="form-control" name="city" placeholder="请输入城市">
+                                    <span class="form-error"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><span class="label-icon">🗺️</span>详细地址</label>
+                                <input type="text" class="form-control" name="address" placeholder="请输入详细地址">
+                                <span class="form-error"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-lg">💾 保存设置</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        // 手机号正则
+        const phoneRegex = /^1[3-9]\d{9}$/;
+
+        // 下拉菜单切换
+        function toggleDropdown() {
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-dropdown')) {
+                document.getElementById('dropdownMenu').classList.remove('show');
+            }
+        });
+
+        // 加载用户信息
+        async function loadUserInfo() {
+            try {
+                const res = await get('/auth/profile');
+                if (res.code === 0 && res.data) {
+                    const { user, merchant } = res.data;
+                    document.getElementById('userName').textContent = merchant?.shop_name || user?.username || '商家';
+                    setUserAvatar(document.getElementById('userAvatar'), user?.avatar);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // 显示字段错误
+        function showFieldError(name) {
+            const input = document.querySelector(`[name="${name}"]`);
+            if (input) {
+                input.closest('.form-group').classList.add('has-error');
+            }
+        }
+
+        // 清除字段错误
+        function clearFieldError(name) {
+            const input = document.querySelector(`[name="${name}"]`);
+            if (input) {
+                input.closest('.form-group').classList.remove('has-error');
+            }
+        }
+
+        // 清除所有错误
+        function clearAllErrors() {
+            document.querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+        }
+
+        // 表单校验
+        function validateForm() {
+            clearAllErrors();
+            let isValid = true;
+            const form = document.getElementById('profileForm');
+            const data = new FormData(form);
+
+            // 店铺名称必填
+            if (!data.get('shop_name').trim()) {
+                showFieldError('shop_name');
+                isValid = false;
+            }
+
+            // 手机号校验（如果填写了）
+            const phone = data.get('contact_phone').trim();
+            if (phone && !phoneRegex.test(phone)) {
+                showFieldError('contact_phone');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // 实时清除错误
+        document.querySelectorAll('#profileForm input, #profileForm textarea').forEach(el => {
+            el.addEventListener('input', () => clearFieldError(el.name));
+        });
+
+        // 加载店铺信息
+        async function loadProfile() {
+            try {
+                const res = await get('/auth/profile');
+                if (res.code === 0 && res.data.merchant) {
+                    const m = res.data.merchant;
+                    document.querySelector('input[name="shop_name"]').value = m.shop_name || '';
+                    document.querySelector('textarea[name="description"]').value = m.description || '';
+                    document.querySelector('input[name="contact_name"]').value = m.contact_name || '';
+                    document.querySelector('input[name="contact_phone"]').value = m.contact_phone || '';
+                    document.querySelector('input[name="province"]').value = m.province || '';
+                    document.querySelector('input[name="city"]').value = m.city || '';
+                    document.querySelector('input[name="address"]').value = m.address || '';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // 保存店铺信息
+        document.getElementById('profileForm').onsubmit = async (e) => {
+            e.preventDefault();
+
+            if (!validateForm()) {
+                return;
+            }
+
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+
+            try {
+                const res = await put('/merchant/profile', data);
+                if (res.code === 0) {
+                    showToast('保存成功');
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } catch (err) {
+                showToast('保存失败', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        loadUserInfo();
+        loadProfile();
+
+        // 侧边栏切换
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

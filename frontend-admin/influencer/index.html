@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>达人中心 - 探店达人营销平台</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/influencer/assets/css/influencer.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- 遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/influencer/index.html" class="sidebar-logo">🔥 探店达人</a>
+                <span class="sidebar-badge">达人版</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/influencer/index.html" class="nav-item active">
+                    <span class="nav-icon">🏠</span>
+                    <span>首页</span>
+                </a>
+                <a href="/influencer/tasks.html" class="nav-item">
+                    <span class="nav-icon">📋</span>
+                    <span>任务大厅</span>
+                </a>
+                <a href="/influencer/orders.html" class="nav-item">
+                    <span class="nav-icon">📦</span>
+                    <span>我的订单</span>
+                </a>
+                <a href="/influencer/wallet.html" class="nav-item">
+                    <span class="nav-icon">💰</span>
+                    <span>收益中心</span>
+                </a>
+                <a href="/influencer/profile.html" class="nav-item">
+                    <span class="nav-icon">👤</span>
+                    <span>个人资料</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="page-title">达人中心</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-dropdown">
+                        <div class="user-info" onclick="toggleDropdown()">
+                            <div class="user-avatar" id="userAvatar"></div>
+                            <span class="user-name" id="userName">达人</span>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="javascript:logout()" class="dropdown-item danger">
+                                <span>🚪</span>
+                                <span>退出登录</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <!-- 认证提示 -->
+                <div class="alert alert-warning mb-md" id="verifyAlert" style="display: none;">
+                    <span>⚠️ 您尚未完成达人认证，认证后才能接单哦！</span>
+                    <a href="/influencer/profile.html" class="btn btn-sm btn-primary">去认证</a>
+                </div>
+
+                <!-- 统计卡片 -->
+                <div class="grid grid-4 mb-lg">
+                    <div class="stat-card">
+                        <div class="stat-card-icon balance">💰</div>
+                        <div class="stat-card-value" id="statBalance">0.00</div>
+                        <div class="stat-card-label">可提现余额（元）</div>
+                        <div class="stat-card-trend" id="statFrozen">冻结: ¥0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon orders">📋</div>
+                        <div class="stat-card-value" id="statInProgress">0</div>
+                        <div class="stat-card-label">进行中订单</div>
+                        <div class="stat-card-trend" id="statPending">待接单: 0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon completed">📦</div>
+                        <div class="stat-card-value" id="statCompleted">0</div>
+                        <div class="stat-card-label">已完成订单</div>
+                        <div class="stat-card-trend" id="statReviewing">待审核: 0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon earnings">💳</div>
+                        <div class="stat-card-value" id="statTotalEarnings">0.00</div>
+                        <div class="stat-card-label">累计收益（元）</div>
+                        <div class="stat-card-trend" id="statMonthEarnings">本月: ¥0.00</div>
+                    </div>
+                </div>
+
+                <!-- 快捷操作 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">快捷操作</h3>
+                    </div>
+                    <div class="quick-actions">
+                        <a href="/influencer/tasks.html" class="quick-action-item">
+                            <span class="quick-action-icon">🔍</span>
+                            <span>浏览任务</span>
+                        </a>
+                        <a href="/influencer/orders.html?status=2,3" class="quick-action-item">
+                            <span class="quick-action-icon">📝</span>
+                            <span>待执行订单</span>
+                        </a>
+                        <a href="/influencer/wallet.html?action=withdraw" class="quick-action-item">
+                            <span class="quick-action-icon">💳</span>
+                            <span>申请提现</span>
+                        </a>
+                        <a href="/influencer/profile.html" class="quick-action-item">
+                            <span class="quick-action-icon">⚙️</span>
+                            <span>个人设置</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 推荐任务 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">推荐任务</h3>
+                        <a href="/influencer/tasks.html" class="btn btn-secondary btn-sm">查看更多</a>
+                    </div>
+                    <div id="recommendTasks">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 我的订单 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">最近订单</h3>
+                        <a href="/influencer/orders.html" class="btn btn-secondary btn-sm">查看全部</a>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>任务</th>
+                                    <th>商家</th>
+                                    <th>佣金</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentOrders">
+                                <tr>
+                                    <td colspan="5" class="text-center text-secondary">暂无订单</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        // 加载用户信息和统计
+        async function loadDashboard() {
+            try {
+                const profileRes = await get('/auth/profile');
+                if (profileRes.code === 0 && profileRes.data) {
+                    const { user, influencer, wallet } = profileRes.data;
+
+                    document.getElementById('userName').textContent = influencer?.nickname || user?.username || '达人';
+                    setUserAvatar(document.getElementById('userAvatar'), user?.avatar);
+
+                    // 检查认证状态
+                    if (!influencer || influencer.verify_status !== 1) {
+                        document.getElementById('verifyAlert').style.display = 'flex';
+                    }
+
+                    // 统计数据
+                    document.getElementById('statBalance').textContent = formatMoney(wallet?.balance || 0);
+                    document.getElementById('statFrozen').textContent = '冻结: ¥' + formatMoney(wallet?.frozen_amount || 0);
+                    document.getElementById('statTotalEarnings').textContent = formatMoney(influencer?.total_earnings || 0);
+                    document.getElementById('statMonthEarnings').textContent = '本月: ¥' + formatMoney(influencer?.month_earnings || 0);
+                }
+
+                // 加载订单统计
+                const ordersRes = await get('/influencer/orders', { per_page: 100 });
+                if (ordersRes.code === 0) {
+                    const orders = ordersRes.data.items;
+                    const inProgress = orders.filter(o => [2, 3, 4].includes(o.status)).length;
+                    const completed = orders.filter(o => o.status === 5).length;
+                    const pending = orders.filter(o => o.status === 1).length;
+                    const reviewing = orders.filter(o => o.status === 4).length;
+
+                    document.getElementById('statInProgress').textContent = inProgress;
+                    document.getElementById('statCompleted').textContent = completed;
+                    document.getElementById('statPending').textContent = '待接单: ' + pending;
+                    document.getElementById('statReviewing').textContent = '待审核: ' + reviewing;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // 加载推荐任务（定向派单）
+        async function loadRecommendTasks() {
+            try {
+                // 使用推荐任务接口，基于匹配度算法
+                const res = await get('/influencer/tasks/recommended', { limit: 4 });
+                if (res.code === 0) {
+                    renderTasks(res.data.items);
+                }
+            } catch (err) {
+                // 降级到普通任务列表
+                try {
+                    const fallbackRes = await get('/influencer/tasks', { per_page: 4 });
+                    if (fallbackRes.code === 0) {
+                        renderTasks(fallbackRes.data.items);
+                    }
+                } catch (e) {
+                    document.getElementById('recommendTasks').innerHTML = '<p class="text-center text-secondary p-lg">暂无推荐任务</p>';
+                }
+            }
+        }
+
+        function renderTasks(tasks) {
+            const container = document.getElementById('recommendTasks');
+
+            if (tasks.length === 0) {
+                container.innerHTML = '<p class="text-center text-secondary p-lg">暂无推荐任务</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="task-grid">
+                    ${tasks.map(task => {
+                        // 显示匹配度
+                        const matchScore = task.match_score || 0;
+                        let matchLevel = '';
+                        let matchClass = '';
+                        if (matchScore >= 80) {
+                            matchLevel = '极高';
+                            matchClass = 'tag-success';
+                        } else if (matchScore >= 60) {
+                            matchLevel = '较高';
+                            matchClass = 'tag-primary';
+                        } else if (matchScore >= 40) {
+                            matchLevel = '一般';
+                            matchClass = 'tag-warning';
+                        } else {
+                            matchLevel = '较低';
+                            matchClass = '';
+                        }
+
+                        return `
+                        <div class="task-item" onclick="location.href='/influencer/tasks.html?id=${task.id}'">
+                            <div class="task-item-header">
+                                ${task.shop_logo
+                                    ? `<img src="${task.shop_logo}" alt="" class="task-shop-logo">`
+                                    : `<div class="task-shop-logo" style="display:flex;align-items:center;justify-content:center;background:#E8EDF3;font-size:20px;">🏪</div>`
+                                }
+                                <div>
+                                    <div class="task-shop-name">${task.shop_name}</div>
+                                    <div class="task-shop-city">${task.city || '全国'}</div>
+                                </div>
+                                ${matchScore > 0 ? `<span class="tag ${matchClass}" style="margin-left:auto;">匹配度${matchLevel}</span>` : ''}
+                            </div>
+                            <h4 class="task-item-title">${task.title}</h4>
+                            <div class="task-item-tags">
+                                <span class="tag">${task.task_type == 1 ? '云探店' : '到店实探'}</span>
+                                <span class="tag tag-primary">${task.category_name || '美食'}</span>
+                            </div>
+                            <div class="task-item-footer">
+                                <span class="task-commission">
+                                    ${task.commission_type == 1 ? '¥' + formatMoney(task.commission_amount) : task.cps_rate + '%分成'}
+                                </span>
+                                <span class="task-quota">剩余${task.max_influencers - task.accepted_count}个名额</span>
+                            </div>
+                        </div>
+                    `}).join('')}
+                </div>
+            `;
+        }
+
+        // 加载最近订单
+        async function loadRecentOrders() {
+            try {
+                const res = await get('/influencer/orders', { per_page: 5 });
+                if (res.code === 0 && res.data.items.length > 0) {
+                    renderOrders(res.data.items);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderOrders(orders) {
+            const tbody = document.getElementById('recentOrders');
+            tbody.innerHTML = orders.map(order => `
+                <tr>
+                    <td>${order.task_title}</td>
+                    <td>${order.shop_name}</td>
+                    <td>¥${formatMoney(order.commission_amount)}</td>
+                    <td>${getStatusTag(order.status, 'order')}</td>
+                    <td>
+                        <a href="/influencer/orders.html?id=${order.id}" class="btn btn-secondary btn-sm">查看</a>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 初始化
+        loadDashboard();
+        loadRecommendTasks();
+        loadRecentOrders();
+
+        // 侧边栏切换
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+
+        // 下拉菜单切换
+        function toggleDropdown() {
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-dropdown')) {
+                document.getElementById('dropdownMenu').classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

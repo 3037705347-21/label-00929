@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务管理 - 商家中心</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/merchant/assets/css/merchant.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- 遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/merchant/index.html" class="sidebar-logo">🔥 探店达人</a>
+                <span class="sidebar-badge">商家版</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/merchant/index.html" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span>数据看板</span>
+                </a>
+                <a href="/merchant/tasks.html" class="nav-item active">
+                    <span class="nav-icon">📋</span>
+                    <span>任务管理</span>
+                </a>
+                <a href="/merchant/orders.html" class="nav-item">
+                    <span class="nav-icon">📦</span>
+                    <span>订单管理</span>
+                </a>
+                <a href="/merchant/wallet.html" class="nav-item">
+                    <span class="nav-icon">💰</span>
+                    <span>财务中心</span>
+                </a>
+                <a href="/merchant/profile.html" class="nav-item">
+                    <span class="nav-icon">🏪</span>
+                    <span>店铺设置</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="page-title">任务管理</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-dropdown">
+                        <div class="user-info" onclick="toggleDropdown()">
+                            <div class="user-avatar" id="userAvatar"></div>
+                            <span class="user-name" id="userName">商家</span>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="javascript:logout()" class="dropdown-item danger">
+                                <span>🚪</span>
+                                <span>退出登录</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <!-- 任务列表视图 -->
+                <div id="taskListView">
+                    <!-- 筛选栏 -->
+                    <div class="filter-bar">
+                        <div class="filter-left">
+                            <select class="form-control" style="width: 150px;" id="filterStatus">
+                                <option value="">全部状态</option>
+                                <option value="0">草稿</option>
+                                <option value="1">审核中</option>
+                                <option value="2">进行中</option>
+                                <option value="3">已结束</option>
+                                <option value="4">已取消</option>
+                            </select>
+                            <button class="btn btn-search" onclick="loadTasks()">搜索</button>
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateForm()">+ 发布任务</button>
+                    </div>
+
+                    <!-- 任务列表 -->
+                    <div id="taskList" class="task-list-grid">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+
+                    <!-- 分页 -->
+                    <div class="pagination" id="pagination"></div>
+                </div>
+
+                <!-- 创建/编辑任务表单 -->
+                <div id="taskFormView" style="display: none;">
+                    <div class="form-page">
+                        <form id="taskForm" novalidate>
+                            <input type="hidden" name="id" id="taskId">
+
+                            <div class="form-section">
+                                <h3 class="form-section-title">基本信息</h3>
+                                <div class="form-group">
+                                    <label class="form-label required">任务标题</label>
+                                    <input type="text" class="form-control" name="title" placeholder="请输入任务标题">
+                                    <div class="form-error">请输入任务标题</div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label required">任务类型</label>
+                                        <select class="form-control" name="task_type">
+                                            <option value="1">云探店（线上创作）</option>
+                                            <option value="2">到店实探（线下体验）</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">内容形式</label>
+                                        <select class="form-control" name="content_form">
+                                            <option value="video">短视频</option>
+                                            <option value="image">图文笔记</option>
+                                            <option value="live">直播</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label required">任务要求</label>
+                                    <textarea class="form-control" name="requirements" rows="4" placeholder="请详细描述任务要求、内容方向、注意事项等"></textarea>
+                                    <div class="form-error">请输入任务要求</div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="form-section-title">推广商品</h3>
+                                <div class="form-group">
+                                    <label class="form-label">商品/套餐名称</label>
+                                    <input type="text" class="form-control" name="target_product" placeholder="请输入要推广的商品或套餐">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">商品价格</label>
+                                    <input type="number" class="form-control" name="product_price" placeholder="请输入商品价格" step="0.01" min="0">
+                                    <div class="form-error">请输入有效的商品价格</div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="form-section-title">达人要求</h3>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">最低粉丝数</label>
+                                        <input type="number" class="form-control" name="min_followers" placeholder="0表示不限制" value="0" min="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">发布平台</label>
+                                        <select class="form-control" name="publish_platform">
+                                            <option value="douyin">抖音</option>
+                                            <option value="xiaohongshu">小红书</option>
+                                            <option value="kuaishou">快手</option>
+                                            <option value="all">不限</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="form-section-title">佣金设置</h3>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label required">佣金类型</label>
+                                        <select class="form-control" name="commission_type" id="commissionType">
+                                            <option value="1">一口价（固定金额）</option>
+                                            <option value="2">CPS（按销售分成）</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" id="commissionAmountGroup">
+                                        <label class="form-label required">佣金金额（元）</label>
+                                        <input type="number" class="form-control" name="commission_amount" placeholder="请输入佣金金额" step="0.01" min="0">
+                                        <div class="form-error">请输入有效的佣金金额</div>
+                                    </div>
+                                    <div class="form-group" id="cpsRateGroup" style="display: none;">
+                                        <label class="form-label required">分成比例（%）</label>
+                                        <input type="number" class="form-control" name="cps_rate" placeholder="请输入分成比例" step="0.1" min="0" max="100">
+                                        <div class="form-error">请输入0-100之间的分成比例</div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label required">任务总预算（元）</label>
+                                        <input type="number" class="form-control" name="total_budget" placeholder="请输入总预算" step="0.01" min="0">
+                                        <div class="form-error">请输入有效的任务总预算</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label required">最大接单人数</label>
+                                        <input type="number" class="form-control" name="max_influencers" value="1" min="1">
+                                        <div class="form-error">最大接单人数至少为1</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3 class="form-section-title">任务周期</h3>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label required">开始日期</label>
+                                        <input type="date" class="form-control" name="start_date">
+                                        <div class="form-error">请选择开始日期</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label required">结束日期</label>
+                                        <input type="date" class="form-control" name="end_date">
+                                        <div class="form-error">请选择结束日期，且不能早于开始日期</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-md justify-center">
+                                <button type="button" class="btn btn-secondary btn-lg" onclick="hideCreateForm()">取消</button>
+                                <button type="submit" class="btn btn-secondary btn-lg" name="action" value="draft">保存草稿</button>
+                                <button type="submit" class="btn btn-primary btn-lg" name="action" value="publish">保存并发布</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        let currentPage = 1;
+
+        // 下拉菜单切换
+        function toggleDropdown() {
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-dropdown')) {
+                document.getElementById('dropdownMenu').classList.remove('show');
+            }
+        });
+
+        // 加载用户信息
+        async function loadUserInfo() {
+            try {
+                const res = await get('/auth/profile');
+                if (res.code === 0) {
+                    const { user, merchant } = res.data;
+                    document.getElementById('userName').textContent = merchant?.shop_name || user?.username || '商家';
+                    setUserAvatar(document.getElementById('userAvatar'), user?.avatar);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // 佣金类型切换
+        document.getElementById('commissionType').onchange = function() {
+            const isFixed = this.value === '1';
+            document.getElementById('commissionAmountGroup').style.display = isFixed ? 'block' : 'none';
+            document.getElementById('cpsRateGroup').style.display = isFixed ? 'none' : 'block';
+        };
+
+        // 显示创建表单
+        function showCreateForm() {
+            document.getElementById('taskListView').style.display = 'none';
+            document.getElementById('taskFormView').style.display = 'block';
+            document.getElementById('taskForm').reset();
+            document.getElementById('taskId').value = '';
+            clearAllErrors();
+            const today = new Date().toISOString().split('T')[0];
+            document.querySelector('input[name="start_date"]').value = today;
+        }
+
+        // 隐藏创建表单
+        function hideCreateForm() {
+            document.getElementById('taskListView').style.display = 'block';
+            document.getElementById('taskFormView').style.display = 'none';
+            clearAllErrors();
+        }
+
+        // 清除所有错误
+        function clearAllErrors() {
+            document.querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+        }
+
+        // 显示字段错误
+        function showFieldError(name, message) {
+            const input = document.querySelector(`[name="${name}"]`);
+            if (input) {
+                const group = input.closest('.form-group');
+                group.classList.add('has-error');
+                const errorEl = group.querySelector('.form-error');
+                if (errorEl && message) errorEl.textContent = message;
+            }
+        }
+
+        // 清除字段错误
+        function clearFieldError(name) {
+            const input = document.querySelector(`[name="${name}"]`);
+            if (input) {
+                input.closest('.form-group').classList.remove('has-error');
+            }
+        }
+
+        // 表单校验
+        function validateForm() {
+            clearAllErrors();
+            let isValid = true;
+            const form = document.getElementById('taskForm');
+            const data = new FormData(form);
+
+            // 任务标题
+            if (!data.get('title').trim()) {
+                showFieldError('title', '请输入任务标题');
+                isValid = false;
+            }
+
+            // 任务要求
+            if (!data.get('requirements').trim()) {
+                showFieldError('requirements', '请输入任务要求');
+                isValid = false;
+            }
+
+            // 商品价格（如果填写了需要是有效数字）
+            const productPrice = data.get('product_price');
+            if (productPrice && (isNaN(productPrice) || parseFloat(productPrice) < 0)) {
+                showFieldError('product_price', '请输入有效的商品价格');
+                isValid = false;
+            }
+
+            // 佣金设置
+            const commissionType = data.get('commission_type');
+            if (commissionType === '1') {
+                const amount = data.get('commission_amount');
+                if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+                    showFieldError('commission_amount', '请输入有效的佣金金额');
+                    isValid = false;
+                }
+            } else {
+                const rate = data.get('cps_rate');
+                if (!rate || isNaN(rate) || parseFloat(rate) <= 0 || parseFloat(rate) > 100) {
+                    showFieldError('cps_rate', '请输入0-100之间的分成比例');
+                    isValid = false;
+                }
+            }
+
+            // 总预算
+            const budget = data.get('total_budget');
+            if (!budget || isNaN(budget) || parseFloat(budget) <= 0) {
+                showFieldError('total_budget', '请输入有效的任务总预算');
+                isValid = false;
+            }
+
+            // 最大接单人数
+            const maxInfluencers = data.get('max_influencers');
+            if (!maxInfluencers || isNaN(maxInfluencers) || parseInt(maxInfluencers) < 1) {
+                showFieldError('max_influencers', '最大接单人数至少为1');
+                isValid = false;
+            }
+
+            // 日期
+            const startDate = data.get('start_date');
+            const endDate = data.get('end_date');
+            if (!startDate) {
+                showFieldError('start_date', '请选择开始日期');
+                isValid = false;
+            }
+            if (!endDate) {
+                showFieldError('end_date', '请选择结束日期');
+                isValid = false;
+            } else if (startDate && endDate && endDate < startDate) {
+                showFieldError('end_date', '结束日期不能早于开始日期');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // 实时清除错误
+        document.querySelectorAll('#taskForm input, #taskForm textarea, #taskForm select').forEach(el => {
+            el.addEventListener('input', () => clearFieldError(el.name));
+            el.addEventListener('change', () => clearFieldError(el.name));
+        });
+
+        // 加载任务列表
+        async function loadTasks(page = 1) {
+            currentPage = page;
+            const status = document.getElementById('filterStatus').value;
+
+            try {
+                const res = await get('/merchant/tasks', { page, status: status || undefined });
+                if (res.code === 0) {
+                    renderTasks(res.data.items);
+                    renderPagination(document.getElementById('pagination'), res.data.pagination, loadTasks);
+                }
+            } catch (err) {
+                showToast('加载失败', 'error');
+            }
+        }
+
+        function renderTasks(tasks) {
+            const container = document.getElementById('taskList');
+
+            if (tasks.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <p class="empty-state-text">暂无任务，点击右上角发布新任务</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = tasks.map(task => `
+                <div class="task-card">
+                    <div class="task-card-header">
+                        <div>
+                            <h3 class="task-card-title">${task.title}</h3>
+                            <div class="task-card-meta">
+                                <span>${task.task_type == 1 ? '☁️ 云探店' : '🏪 到店实探'}</span>
+                                <span>${task.commission_type == 1 ? '💰 一口价 ¥' + formatMoney(task.commission_amount) : '📊 CPS ' + task.cps_rate + '%'}</span>
+                                <span>📅 ${formatDate(task.start_date)} ~ ${formatDate(task.end_date)}</span>
+                            </div>
+                        </div>
+                        ${getStatusTag(task.status, 'task')}
+                    </div>
+                    <div class="task-card-body">
+                        <div class="task-card-stats">
+                            <div class="task-stat">
+                                <div class="task-stat-value">${task.applied_count}</div>
+                                <div class="task-stat-label">报名人数</div>
+                            </div>
+                            <div class="task-stat">
+                                <div class="task-stat-value">${task.accepted_count}</div>
+                                <div class="task-stat-label">已接单</div>
+                            </div>
+                            <div class="task-stat">
+                                <div class="task-stat-value">${task.completed_count}</div>
+                                <div class="task-stat-label">已完成</div>
+                            </div>
+                            <div class="task-stat">
+                                <div class="task-stat-value">¥${formatMoney(task.total_budget)}</div>
+                                <div class="task-stat-label">总预算</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="task-card-footer">
+                        <span class="text-secondary text-sm">创建于 ${formatDate(task.created_at, 'YYYY-MM-DD HH:mm')}</span>
+                        <div class="flex gap-sm">
+                            ${task.status == 0 ? `
+                                <button class="btn btn-secondary btn-sm" onclick="editTask(${task.id})">编辑</button>
+                                <button class="btn btn-primary btn-sm" onclick="publishTask(${task.id})">发布</button>
+                            ` : ''}
+                            ${task.status == 2 ? `
+                                <a href="/merchant/orders.html?task_id=${task.id}" class="btn btn-secondary btn-sm">查看订单</a>
+                            ` : ''}
+                            ${task.applied_count > 0 ? `
+                                <button class="btn btn-secondary btn-sm" onclick="viewApplications(${task.id})">查看报名</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 编辑任务
+        async function editTask(id) {
+            try {
+                const res = await get(`/merchant/tasks/${id}`);
+                if (res.code === 0) {
+                    const task = res.data;
+                    showCreateForm();
+                    document.getElementById('taskId').value = task.id;
+                    document.querySelector('input[name="title"]').value = task.title;
+
+                    const taskTypeSelect = document.querySelector('select[name="task_type"]');
+                    taskTypeSelect.value = task.task_type;
+                    if (typeof updateCustomSelect === 'function') updateCustomSelect(taskTypeSelect);
+
+                    const contentFormSelect = document.querySelector('select[name="content_form"]');
+                    contentFormSelect.value = task.content_form || 'video';
+                    if (typeof updateCustomSelect === 'function') updateCustomSelect(contentFormSelect);
+
+                    document.querySelector('textarea[name="requirements"]').value = task.requirements;
+                    document.querySelector('input[name="target_product"]').value = task.target_product || '';
+                    document.querySelector('input[name="product_price"]').value = task.product_price || '';
+                    document.querySelector('input[name="min_followers"]').value = task.min_followers || 0;
+
+                    const platformSelect = document.querySelector('select[name="publish_platform"]');
+                    platformSelect.value = task.publish_platform || 'douyin';
+                    if (typeof updateCustomSelect === 'function') updateCustomSelect(platformSelect);
+
+                    const commissionTypeSelect = document.querySelector('select[name="commission_type"]');
+                    commissionTypeSelect.value = task.commission_type;
+                    if (typeof updateCustomSelect === 'function') updateCustomSelect(commissionTypeSelect);
+
+                    document.querySelector('input[name="commission_amount"]').value = task.commission_amount || '';
+                    document.querySelector('input[name="cps_rate"]').value = task.cps_rate || '';
+                    document.querySelector('input[name="total_budget"]').value = task.total_budget;
+                    document.querySelector('input[name="max_influencers"]').value = task.max_influencers;
+                    document.querySelector('input[name="start_date"]').value = task.start_date;
+                    document.querySelector('input[name="end_date"]').value = task.end_date;
+                    document.getElementById('commissionType').dispatchEvent(new Event('change'));
+                }
+            } catch (err) {
+                showToast('加载失败', 'error');
+            }
+        }
+
+        // 发布任务
+        async function publishTask(id) {
+            if (!await confirm('确定要发布此任务吗？发布后将冻结相应预算。')) return;
+            try {
+                const res = await post(`/merchant/tasks/${id}/publish`);
+                if (res.code === 0) {
+                    showToast('发布成功');
+                    loadTasks(currentPage);
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } catch (err) {
+                showToast('发布失败', 'error');
+            }
+        }
+
+        // 查看报名
+        function viewApplications(taskId) {
+            window.location.href = `/merchant/orders.html?task_id=${taskId}&status=1`;
+        }
+
+        // 表单提交
+        document.getElementById('taskForm').onsubmit = async function(e) {
+            e.preventDefault();
+
+            if (!validateForm()) {
+                return;
+            }
+
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            const action = e.submitter.value;
+            const btn = e.submitter;
+            btn.disabled = true;
+
+            try {
+                let res;
+                if (data.id) {
+                    res = await put(`/merchant/tasks/${data.id}`, data);
+                } else {
+                    res = await post('/merchant/tasks', data);
+                }
+
+                if (res.code === 0) {
+                    const taskId = data.id || res.data.id;
+                    if (action === 'publish') {
+                        const publishRes = await post(`/merchant/tasks/${taskId}/publish`);
+                        if (publishRes.code === 0) {
+                            showToast('任务发布成功');
+                        } else {
+                            showToast(publishRes.message || '发布失败', 'error');
+                            hideCreateForm();
+                            loadTasks();
+                            return;
+                        }
+                    } else {
+                        showToast('保存成功');
+                    }
+                    hideCreateForm();
+                    loadTasks();
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } catch (err) {
+                showToast('操作失败', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        // 初始化
+        loadUserInfo();
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'create') {
+            showCreateForm();
+        } else {
+            loadTasks();
+        }
+
+        // 侧边栏切换
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

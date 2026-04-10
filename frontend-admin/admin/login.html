@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台登录 - 探店达人营销平台</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #475569 0%, #334155 100%);
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            padding: var(--spacing-lg);
+        }
+
+        .login-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .login-logo h1 {
+            font-size: 24px;
+            color: var(--admin-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .login-logo p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .btn-admin {
+            background: var(--admin-primary);
+        }
+
+        .btn-admin:hover {
+            background: var(--admin-hover);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-logo">
+                <h1>🔐 管理后台</h1>
+                <p>探店达人营销平台</p>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">管理员账号</label>
+                    <input type="text" class="form-control" name="username" placeholder="请输入管理员账号" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">密码</label>
+                    <input type="password" class="form-control" name="password" placeholder="请输入密码" required>
+                </div>
+                <button type="submit" class="btn btn-admin btn-block btn-lg">登 录</button>
+            </form>
+
+            <div class="text-center mt-lg">
+                <a href="/login.html" class="text-secondary">返回用户登录</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = '登录中...';
+
+            try {
+                const res = await post('/auth/login', data);
+
+                if (res.code === 0) {
+                    if (res.data.user.user_type != 3) {
+                        showToast('非管理员账号', 'error');
+                        btn.disabled = false;
+                        btn.textContent = '登 录';
+                        return;
+                    }
+
+                    // 存储到管理端的 token
+                    localStorage.setItem('token_admin', res.data.token);
+                    localStorage.setItem('user_admin', JSON.stringify(res.data.user));
+
+                    showToast('登录成功');
+                    window.location.href = '/admin/index.html';
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } catch (err) {
+                showToast('登录失败', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '登 录';
+            }
+        };
+    </script>
+</body>
+</html>

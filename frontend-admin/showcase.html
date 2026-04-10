@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内容广场 - 探店达人营销平台</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <style>
+        /* 导航栏 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: white;
+            box-shadow: var(--shadow-sm);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-xl);
+        }
+
+        .navbar-brand {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .navbar-center {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xl);
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .navbar-center a {
+            color: var(--text-primary);
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .navbar-center a:hover,
+        .navbar-center a.active {
+            color: var(--primary-color);
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        /* 主内容 */
+        .main-content {
+            padding-top: 64px;
+            min-height: 100vh;
+            background: var(--bg-light);
+        }
+
+        /* 页面头部 */
+        .page-header {
+            background: linear-gradient(135deg, #FFF4F0 0%, #FFFFFF 100%);
+            padding: var(--spacing-xl) 0;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+        }
+
+        /* 筛选栏 */
+        .filter-section {
+            background: white;
+            padding: var(--spacing-md) 0;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 64px;
+            z-index: 50;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 8px 16px;
+            border-radius: var(--radius-full);
+            background: var(--bg-light);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 14px;
+        }
+
+        .filter-tab:hover {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .filter-tab.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* 内容网格 */
+        .showcase-section {
+            padding: var(--spacing-xl) 0;
+        }
+
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--spacing-lg);
+        }
+
+        .showcase-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-card);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .showcase-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .showcase-cover {
+            width: 100%;
+            height: 200px;
+            background: var(--bg-light);
+            object-fit: cover;
+            position: relative;
+        }
+
+        .showcase-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .showcase-cover-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+            background: linear-gradient(135deg, var(--primary-light) 0%, #FFE4D6 100%);
+        }
+
+        .showcase-badge {
+            position: absolute;
+            top: var(--spacing-sm);
+            left: var(--spacing-sm);
+            background: var(--primary-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+        }
+
+        .showcase-platform {
+            position: absolute;
+            top: var(--spacing-sm);
+            right: var(--spacing-sm);
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+        }
+
+        .showcase-body {
+            padding: var(--spacing-md);
+        }
+
+        .showcase-title {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: var(--spacing-sm);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .showcase-author {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .showcase-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            overflow: hidden;
+        }
+
+        .showcase-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .showcase-author-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .showcase-author-name {
+            font-size: 13px;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .showcase-author-fans {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .showcase-stats {
+            display: flex;
+            gap: var(--spacing-md);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .showcase-stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 达人详情弹窗 */
+        .influencer-modal .modal {
+            max-width: 700px;
+        }
+
+        .influencer-header {
+            display: flex;
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .influencer-avatar-lg {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--bg-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .influencer-avatar-lg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .influencer-info h3 {
+            font-size: 20px;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .influencer-meta {
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .influencer-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .influencer-tags {
+            display: flex;
+            gap: var(--spacing-xs);
+            flex-wrap: wrap;
+        }
+
+        .influencer-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .influencer-stat-card {
+            background: var(--bg-light);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            text-align: center;
+        }
+
+        .influencer-stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .influencer-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .influencer-portfolio-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .influencer-portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-sm);
+        }
+
+        .portfolio-item {
+            aspect-ratio: 1;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: var(--bg-light);
+        }
+
+        .portfolio-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: var(--spacing-xxl);
+        }
+
+        /* 页脚 */
+        .footer {
+            padding: var(--spacing-xl) 0;
+            background: var(--bg-dark);
+            color: white;
+            text-align: center;
+        }
+
+        .footer p {
+            opacity: 0.7;
+            font-size: 14px;
+        }
+
+        @media (max-width: 1200px) {
+            .showcase-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .showcase-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .navbar-center {
+                display: none;
+            }
+
+            .influencer-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .influencer-portfolio-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .showcase-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">🔥 探店达人</a>
+        <div class="navbar-center">
+            <a href="/">首页</a>
+            <a href="/showcase.html" class="active">内容广场</a>
+        </div>
+        <div class="navbar-right">
+            <a href="/login.html" class="btn btn-secondary">登录</a>
+            <a href="/login.html?tab=register" class="btn btn-primary">免费注册</a>
+        </div>
+    </nav>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+        <!-- 页面头部 -->
+        <div class="page-header">
+            <div class="container">
+                <h1>🏆 内容广场</h1>
+                <p>发现优质探店案例，为商家提供选人参考，为达人提供创作方向</p>
+            </div>
+        </div>
+
+        <!-- 筛选栏 -->
+        <div class="filter-section">
+            <div class="container">
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-platform="">全部</button>
+                    <button class="filter-tab" data-platform="douyin">抖音</button>
+                    <button class="filter-tab" data-platform="xiaohongshu">小红书</button>
+                    <button class="filter-tab" data-platform="kuaishou">快手</button>
+                    <button class="filter-tab" data-featured="1">🔥 精选案例</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 内容列表 -->
+        <section class="showcase-section">
+            <div class="container">
+                <div class="showcase-grid" id="showcaseGrid">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+                <div class="pagination mt-lg" id="pagination"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <p>© 2024 探店达人营销平台 All Rights Reserved</p>
+        </div>
+    </footer>
+
+    <!-- 达人详情弹窗 -->
+    <div class="modal-overlay influencer-modal" id="influencerModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">达人主页</h3>
+                <button class="modal-close" onclick="closeModal('influencerModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="influencerContent">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        let currentPage = 1;
+        let currentFilters = {};
+
+        // 平台图标映射
+        const platformIcons = {
+            'douyin': '🎵',
+            'xiaohongshu': '📕',
+            'kuaishou': '⚡',
+        };
+
+        const platformNames = {
+            'douyin': '抖音',
+            'xiaohongshu': '小红书',
+            'kuaishou': '快手',
+        };
+
+        // 加载内容列表
+        async function loadShowcase(page = 1) {
+            currentPage = page;
+            const grid = document.getElementById('showcaseGrid');
+            grid.innerHTML = '<div class="loading"><div class="loading-spinner"></div></div>';
+
+            try {
+                const params = { page, per_page: 12, ...currentFilters };
+                const res = await get('/showcase', params);
+
+                if (res.code === 0 && res.data.items && res.data.items.length > 0) {
+                    renderShowcase(res.data.items);
+                    renderPagination(document.getElementById('pagination'), res.data.pagination, loadShowcase);
+                    return;
+                }
+            } catch (err) {
+                console.log('API请求失败，使用mock数据');
+            }
+
+            // 没有真实数据时使用mock数据
+            renderShowcase(getMockData());
+            document.getElementById('pagination').innerHTML = '';
+        }
+
+        // Mock数据
+        function getMockData() {
+            return [
+                {
+                    id: 1,
+                    title: '探店｜人均50吃到撑的宝藏火锅店',
+                    cover_image: '',
+                    platform: 'douyin',
+                    influencer_id: 1,
+                    influencer_name: '美食探店小王',
+                    influencer_avatar: '',
+                    follower_count: 125000,
+                    view_count: 58000,
+                    like_count: 3200,
+                    comment_count: 456,
+                    is_featured: true
+                },
+                {
+                    id: 2,
+                    title: '小红书爆款咖啡店打卡攻略',
+                    cover_image: '',
+                    platform: 'xiaohongshu',
+                    influencer_id: 2,
+                    influencer_name: '咖啡控小美',
+                    influencer_avatar: '',
+                    follower_count: 89000,
+                    view_count: 32000,
+                    like_count: 2100,
+                    comment_count: 328,
+                    is_featured: true
+                },
+                {
+                    id: 3,
+                    title: '周末好去处！超治愈的日式居酒屋',
+                    cover_image: '',
+                    platform: 'douyin',
+                    influencer_id: 3,
+                    influencer_name: '吃货日记',
+                    influencer_avatar: '',
+                    follower_count: 256000,
+                    view_count: 89000,
+                    like_count: 5600,
+                    comment_count: 789,
+                    is_featured: false
+                },
+                {
+                    id: 4,
+                    title: '本地人私藏的烧烤店，味道绝了',
+                    cover_image: '',
+                    platform: 'kuaishou',
+                    influencer_id: 4,
+                    influencer_name: '烧烤达人阿强',
+                    influencer_avatar: '',
+                    follower_count: 178000,
+                    view_count: 45000,
+                    like_count: 2800,
+                    comment_count: 412,
+                    is_featured: false
+                },
+                {
+                    id: 5,
+                    title: '网红甜品店实测，值不值得排队？',
+                    cover_image: '',
+                    platform: 'xiaohongshu',
+                    influencer_id: 5,
+                    influencer_name: '甜品少女',
+                    influencer_avatar: '',
+                    follower_count: 67000,
+                    view_count: 28000,
+                    like_count: 1900,
+                    comment_count: 267,
+                    is_featured: true
+                },
+                {
+                    id: 6,
+                    title: '隐藏在巷子里的米其林餐厅',
+                    cover_image: '',
+                    platform: 'douyin',
+                    influencer_id: 6,
+                    influencer_name: '美食侦探',
+                    influencer_avatar: '',
+                    follower_count: 320000,
+                    view_count: 120000,
+                    like_count: 8900,
+                    comment_count: 1023,
+                    is_featured: true
+                },
+                {
+                    id: 7,
+                    title: '超高性价比的自助餐厅推荐',
+                    cover_image: '',
+                    platform: 'kuaishou',
+                    influencer_id: 7,
+                    influencer_name: '省钱达人',
+                    influencer_avatar: '',
+                    follower_count: 145000,
+                    view_count: 56000,
+                    like_count: 3400,
+                    comment_count: 521,
+                    is_featured: false
+                },
+                {
+                    id: 8,
+                    title: '约会必去！超浪漫的西餐厅',
+                    cover_image: '',
+                    platform: 'xiaohongshu',
+                    influencer_id: 8,
+                    influencer_name: '约会指南',
+                    influencer_avatar: '',
+                    follower_count: 98000,
+                    view_count: 41000,
+                    like_count: 2600,
+                    comment_count: 389,
+                    is_featured: false
+                }
+            ];
+        }
+
+        function renderShowcase(items) {
+            const grid = document.getElementById('showcaseGrid');
+
+            if (items.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>暂无内容</p></div>';
+                return;
+            }
+
+            grid.innerHTML = items.map(item => {
+                const platformIcon = platformIcons[item.platform] || '📱';
+                const platformName = platformNames[item.platform] || item.platform || '其他';
+
+                return `
+                    <div class="showcase-card" onclick="viewInfluencer(${item.influencer_id})">
+                        <div class="showcase-cover">
+                            ${item.cover_image
+                                ? `<img src="${item.cover_image}" alt="${item.title}">`
+                                : `<div class="showcase-cover-placeholder">🎬</div>`
+                            }
+                            ${item.is_featured ? '<span class="showcase-badge">精选</span>' : ''}
+                            <span class="showcase-platform">${platformIcon} ${platformName}</span>
+                        </div>
+                        <div class="showcase-body">
+                            <div class="showcase-title">${item.title}</div>
+                            <div class="showcase-author">
+                                <div class="showcase-avatar">
+                                    ${item.influencer_avatar
+                                        ? `<img src="${item.influencer_avatar}" alt="">`
+                                        : '👤'
+                                    }
+                                </div>
+                                <div class="showcase-author-info">
+                                    <div class="showcase-author-name">${item.influencer_name || '达人'}</div>
+                                    <div class="showcase-author-fans">${formatNumber(item.follower_count || 0)} 粉丝</div>
+                                </div>
+                            </div>
+                            <div class="showcase-stats">
+                                <span class="showcase-stat">👁 ${formatNumber(item.view_count || 0)}</span>
+                                <span class="showcase-stat">❤️ ${formatNumber(item.like_count || 0)}</span>
+                                <span class="showcase-stat">💬 ${formatNumber(item.comment_count || 0)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 查看达人详情
+        async function viewInfluencer(influencerId) {
+            if (!influencerId) return;
+
+            openModal('influencerModal');
+            const content = document.getElementById('influencerContent');
+            content.innerHTML = '<div class="loading"><div class="loading-spinner"></div></div>';
+
+            try {
+                const res = await get(`/influencers/${influencerId}`);
+                if (res.code === 0) {
+                    renderInfluencerDetail(res.data);
+                } else {
+                    // 使用mock数据
+                    renderInfluencerDetail(getMockInfluencer(influencerId));
+                }
+            } catch (err) {
+                // 使用mock数据
+                renderInfluencerDetail(getMockInfluencer(influencerId));
+            }
+        }
+
+        // Mock达人数据
+        function getMockInfluencer(id) {
+            const mockInfluencers = {
+                1: {
+                    influencer: {
+                        id: 1,
+                        nickname: '美食探店小王',
+                        avatar: '',
+                        platform_type: 'douyin',
+                        city: '北京',
+                        follower_count: 125000,
+                        avg_views: 58000,
+                        avg_likes: 3200,
+                        completed_tasks: 28,
+                        rating: 4.8,
+                        bio: '专注探店5年，发现城市里的美食宝藏！合作请私信~',
+                        tags: ['美食', '探店', '本地生活']
+                    },
+                    portfolio: [
+                        { id: 1, title: '火锅店探店', cover_image: '' },
+                        { id: 2, title: '日料探店', cover_image: '' },
+                        { id: 3, title: '烧烤探店', cover_image: '' }
+                    ]
+                },
+                2: {
+                    influencer: {
+                        id: 2,
+                        nickname: '咖啡控小美',
+                        avatar: '',
+                        platform_type: 'xiaohongshu',
+                        city: '上海',
+                        follower_count: 89000,
+                        avg_views: 32000,
+                        avg_likes: 2100,
+                        completed_tasks: 15,
+                        rating: 4.9,
+                        bio: '咖啡爱好者，探索城市每一家特色咖啡馆☕',
+                        tags: ['咖啡', '下午茶', '生活方式']
+                    },
+                    portfolio: [
+                        { id: 1, title: '网红咖啡店', cover_image: '' },
+                        { id: 2, title: '复古咖啡馆', cover_image: '' }
+                    ]
+                },
+                3: {
+                    influencer: {
+                        id: 3,
+                        nickname: '吃货日记',
+                        avatar: '',
+                        platform_type: 'douyin',
+                        city: '广州',
+                        follower_count: 256000,
+                        avg_views: 89000,
+                        avg_likes: 5600,
+                        completed_tasks: 45,
+                        rating: 4.7,
+                        bio: '广州本地美食博主，带你吃遍羊城！',
+                        tags: ['粤菜', '早茶', '夜宵']
+                    },
+                    portfolio: [
+                        { id: 1, title: '早茶探店', cover_image: '' },
+                        { id: 2, title: '肠粉测评', cover_image: '' },
+                        { id: 3, title: '夜宵推荐', cover_image: '' },
+                        { id: 4, title: '老字号探访', cover_image: '' }
+                    ]
+                },
+                4: {
+                    influencer: {
+                        id: 4,
+                        nickname: '烧烤达人阿强',
+                        avatar: '',
+                        platform_type: 'kuaishou',
+                        city: '成都',
+                        follower_count: 178000,
+                        avg_views: 45000,
+                        avg_likes: 2800,
+                        completed_tasks: 32,
+                        rating: 4.6,
+                        bio: '成都烧烤地图，带你撸串不踩雷！',
+                        tags: ['烧烤', '夜生活', '成都美食']
+                    },
+                    portfolio: [
+                        { id: 1, title: '深夜烧烤', cover_image: '' },
+                        { id: 2, title: '串串香测评', cover_image: '' }
+                    ]
+                },
+                5: {
+                    influencer: {
+                        id: 5,
+                        nickname: '甜品少女',
+                        avatar: '',
+                        platform_type: 'xiaohongshu',
+                        city: '杭州',
+                        follower_count: 67000,
+                        avg_views: 28000,
+                        avg_likes: 1900,
+                        completed_tasks: 18,
+                        rating: 4.9,
+                        bio: '甜品控一枚🍰 分享杭州好吃的甜品店',
+                        tags: ['甜品', '蛋糕', '下午茶']
+                    },
+                    portfolio: [
+                        { id: 1, title: '网红蛋糕店', cover_image: '' },
+                        { id: 2, title: '法式甜品', cover_image: '' }
+                    ]
+                },
+                6: {
+                    influencer: {
+                        id: 6,
+                        nickname: '美食侦探',
+                        avatar: '',
+                        platform_type: 'douyin',
+                        city: '深圳',
+                        follower_count: 320000,
+                        avg_views: 120000,
+                        avg_likes: 8900,
+                        completed_tasks: 68,
+                        rating: 4.8,
+                        bio: '深圳美食侦探，专挖隐藏美味！商务合作请私信',
+                        tags: ['美食', '探店', '深圳']
+                    },
+                    portfolio: [
+                        { id: 1, title: '米其林探店', cover_image: '' },
+                        { id: 2, title: '黑珍珠餐厅', cover_image: '' },
+                        { id: 3, title: '人均50好店', cover_image: '' }
+                    ]
+                },
+                7: {
+                    influencer: {
+                        id: 7,
+                        nickname: '省钱达人',
+                        avatar: '',
+                        platform_type: 'kuaishou',
+                        city: '武汉',
+                        follower_count: 145000,
+                        avg_views: 56000,
+                        avg_likes: 3400,
+                        completed_tasks: 25,
+                        rating: 4.5,
+                        bio: '教你花最少的钱吃最好的！武汉美食省钱攻略',
+                        tags: ['省钱', '性价比', '武汉美食']
+                    },
+                    portfolio: [
+                        { id: 1, title: '自助餐攻略', cover_image: '' },
+                        { id: 2, title: '学生党美食', cover_image: '' }
+                    ]
+                },
+                8: {
+                    influencer: {
+                        id: 8,
+                        nickname: '约会指南',
+                        avatar: '',
+                        platform_type: 'xiaohongshu',
+                        city: '南京',
+                        follower_count: 98000,
+                        avg_views: 41000,
+                        avg_likes: 2600,
+                        completed_tasks: 22,
+                        rating: 4.7,
+                        bio: '分享南京适合约会的浪漫餐厅💕',
+                        tags: ['约会', '浪漫', '西餐']
+                    },
+                    portfolio: [
+                        { id: 1, title: '约会餐厅', cover_image: '' },
+                        { id: 2, title: '情侣下午茶', cover_image: '' }
+                    ]
+                }
+            };
+
+            return mockInfluencers[id] || mockInfluencers[1];
+        }
+
+        function renderInfluencerDetail(data) {
+            const { influencer, portfolio } = data;
+            const content = document.getElementById('influencerContent');
+            const platformIcon = platformIcons[influencer.platform_type] || '📱';
+            const platformName = platformNames[influencer.platform_type] || influencer.platform_type || '其他';
+
+            content.innerHTML = `
+                <div class="influencer-header">
+                    <div class="influencer-avatar-lg">
+                        ${influencer.avatar
+                            ? `<img src="${influencer.avatar}" alt="">`
+                            : '👤'
+                        }
+                    </div>
+                    <div class="influencer-info">
+                        <h3>${influencer.nickname || '达人'}</h3>
+                        <div class="influencer-meta">
+                            <span class="influencer-meta-item">${platformIcon} ${platformName}</span>
+                            <span class="influencer-meta-item">📍 ${influencer.city || '未知'}</span>
+                            <span class="influencer-meta-item">⭐ ${influencer.rating || 0} 评分</span>
+                        </div>
+                        <div class="influencer-tags">
+                            ${(influencer.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="influencer-stats-grid">
+                    <div class="influencer-stat-card">
+                        <div class="influencer-stat-value">${formatNumber(influencer.follower_count || 0)}</div>
+                        <div class="influencer-stat-label">粉丝数</div>
+                    </div>
+                    <div class="influencer-stat-card">
+                        <div class="influencer-stat-value">${formatNumber(influencer.avg_views || 0)}</div>
+                        <div class="influencer-stat-label">平均播放</div>
+                    </div>
+                    <div class="influencer-stat-card">
+                        <div class="influencer-stat-value">${formatNumber(influencer.avg_likes || 0)}</div>
+                        <div class="influencer-stat-label">平均点赞</div>
+                    </div>
+                    <div class="influencer-stat-card">
+                        <div class="influencer-stat-value">${influencer.completed_tasks || 0}</div>
+                        <div class="influencer-stat-label">完成任务</div>
+                    </div>
+                </div>
+
+                ${influencer.bio ? `<p class="text-secondary mb-md">${influencer.bio}</p>` : ''}
+
+                ${portfolio && portfolio.length > 0 ? `
+                    <div class="influencer-portfolio-title">作品集 (${portfolio.length})</div>
+                    <div class="influencer-portfolio-grid">
+                        ${portfolio.slice(0, 6).map(work => `
+                            <div class="portfolio-item">
+                                ${work.cover_image
+                                    ? `<img src="${work.cover_image}" alt="${work.title}">`
+                                    : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:32px;background:var(--primary-light);">🎬</div>`
+                                }
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : '<p class="text-secondary text-center">暂无作品</p>'}
+            `;
+        }
+
+        // 筛选标签点击
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // 移除其他active
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                // 更新筛选条件
+                const platform = this.dataset.platform;
+                const featured = this.dataset.featured;
+
+                currentFilters = {};
+                if (platform) {
+                    currentFilters.platform = platform;
+                }
+                if (featured) {
+                    currentFilters.is_featured = featured;
+                }
+
+                loadShowcase(1);
+            });
+        });
+
+        // 初始化
+        loadShowcase();
+    </script>
+</body>
+</html>

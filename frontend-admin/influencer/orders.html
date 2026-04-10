@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的订单 - 达人中心</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/influencer/assets/css/influencer.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- 遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/influencer/index.html" class="sidebar-logo">🔥 探店达人</a>
+                <span class="sidebar-badge">达人版</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/influencer/index.html" class="nav-item"><span class="nav-icon">🏠</span><span>首页</span></a>
+                <a href="/influencer/tasks.html" class="nav-item"><span class="nav-icon">📋</span><span>任务大厅</span></a>
+                <a href="/influencer/orders.html" class="nav-item active"><span class="nav-icon">📦</span><span>我的订单</span></a>
+                <a href="/influencer/wallet.html" class="nav-item"><span class="nav-icon">💰</span><span>收益中心</span></a>
+                <a href="/influencer/profile.html" class="nav-item"><span class="nav-icon">👤</span><span>个人资料</span></a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="page-title">我的订单</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-dropdown">
+                        <div class="user-info" onclick="toggleDropdown()">
+                            <div class="user-avatar" id="userAvatar"></div>
+                            <span class="user-name" id="userName">达人</span>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="javascript:logout()" class="dropdown-item danger">
+                                <span>🚪</span>
+                                <span>退出登录</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <!-- 筛选栏 -->
+                <div class="card mb-md">
+                    <div class="task-hall-filters">
+                        <select class="form-control" id="filterStatus" style="width:150px;">
+                            <option value="">全部状态</option>
+                            <option value="1">已报名</option>
+                            <option value="2">已接单</option>
+                            <option value="3">执行中</option>
+                            <option value="4">待审核</option>
+                            <option value="5">已完成</option>
+                            <option value="6">已拒绝</option>
+                            <option value="7">已取消</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="loadOrders()">搜索</button>
+                    </div>
+                </div>
+
+                <!-- 订单列表 -->
+                <div class="card">
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>订单号</th>
+                                    <th>任务</th>
+                                    <th>商家</th>
+                                    <th>佣金</th>
+                                    <th>状态</th>
+                                    <th>报名时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderList">
+                                <tr><td colspan="7" class="text-center text-secondary">加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="pagination"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 订单详情弹窗 -->
+    <div class="modal-overlay" id="orderModal">
+        <div class="modal" style="max-width:600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">订单详情</h3>
+                <button class="modal-close" onclick="closeModal('orderModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="orderDetail"></div>
+            <div class="modal-footer" id="orderActions"></div>
+        </div>
+    </div>
+
+    <!-- 聊天弹窗 -->
+    <div class="modal-overlay" id="chatModal">
+        <div class="modal" style="max-width:500px;">
+            <div class="modal-header">
+                <h3 class="modal-title">💬 与商家沟通</h3>
+                <button class="modal-close" onclick="closeModal('chatModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding:0;overflow:hidden;">
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="chat-empty">
+                            <div class="chat-empty-icon">💬</div>
+                            <div>暂无消息，发送第一条消息开始沟通吧</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" class="chat-input" id="chatInput" placeholder="输入消息..." onkeypress="if(event.keyCode===13)sendMessage()">
+                <button class="chat-send-btn" onclick="sendMessage()">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提交作品弹窗 -->
+    <div class="modal-overlay" id="submitWorkModal">
+        <div class="modal" style="max-width:500px;">
+            <div class="modal-header">
+                <h3 class="modal-title">📤 提交作品</h3>
+                <button class="modal-close" onclick="closeModal('submitWorkModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="submitWorkForm">
+                    <input type="hidden" id="submitOrderId">
+                    <div class="form-group">
+                        <label class="form-label">作品类型 <span class="text-danger">*</span></label>
+                        <select class="form-control" id="workStage" required>
+                            <option value="3">成片（最终发布作品）</option>
+                            <option value="1">脚本（文案/策划）</option>
+                            <option value="2">素材（图片/视频素材）</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">作品发布链接 <span class="text-danger">*</span></label>
+                        <input type="url" class="form-control" id="publishUrl" placeholder="请输入作品发布链接，如抖音/小红书链接" required>
+                        <div class="form-hint">请确保链接可正常访问，商家将通过此链接审核您的作品</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">作品说明</label>
+                        <textarea class="form-control" id="workNote" rows="3" placeholder="可补充说明作品内容、数据表现等（选填）"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('submitWorkModal')">取消</button>
+                <button class="btn btn-primary" onclick="doSubmitWork()">提交作品</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        let currentPage = 1;
+        const perPage = 20;
+
+        async function loadOrders(page = 1) {
+            currentPage = page;
+            const status = document.getElementById('filterStatus').value;
+
+            try {
+                const params = { page, per_page: perPage };
+                if (status) params.status = status;
+
+                const res = await get('/influencer/orders', params);
+                if (res.code === 0) {
+                    renderOrders(res.data.items);
+                    renderPagination(res.data.pagination.total, page, perPage);
+                }
+            } catch (err) {
+                showToast('加载失败', 'error');
+            }
+        }
+
+        function renderOrders(orders) {
+            const tbody = document.getElementById('orderList');
+            if (!orders.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-secondary">暂无数据</td></tr>';
+                return;
+            }
+            tbody.innerHTML = orders.map(o => `
+                <tr>
+                    <td>${o.order_no}</td>
+                    <td><a href="javascript:viewOrder(${o.id})" class="text-primary">${o.task_title || '-'}</a></td>
+                    <td>${o.shop_name || '-'}</td>
+                    <td>¥${formatMoney(o.commission_amount)}</td>
+                    <td>${getStatusTag(o.status, 'order')}</td>
+                    <td>${formatDate(o.applied_at)}</td>
+                    <td>
+                        <button class="btn btn-sm" onclick="viewOrder(${o.id})">查看</button>
+                        ${o.status == 2 ? `<button class="btn btn-primary btn-sm" onclick="startWork(${o.id})">开始执行</button>` : ''}
+                        ${o.status == 3 ? `<button class="btn btn-success btn-sm" onclick="submitWork(${o.id})">提交作品</button>` : ''}
+                        ${[2,3,4,5].includes(o.status) ? `<button class="btn btn-chat btn-sm" onclick="openChat(${o.id})">沟通</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderPagination(total, page, perPage) {
+            const totalPages = Math.ceil(total / perPage);
+            if (totalPages <= 1) {
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+            let html = '';
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<span class="pagination-item ${i === page ? 'active' : ''}" onclick="loadOrders(${i})">${i}</span>`;
+            }
+            document.getElementById('pagination').innerHTML = html;
+        }
+
+        async function viewOrder(id) {
+            try {
+                const res = await get(`/influencer/orders/${id}`);
+                if (res.code === 0) {
+                    const o = res.data;
+                    document.getElementById('orderDetail').innerHTML = `
+                        <div class="order-detail-header">
+                            <div class="order-no">订单号：${o.order_no}</div>
+                            <div class="order-status">${getStatusTag(o.status, 'order')}</div>
+                        </div>
+
+                        <div class="task-detail-stats" style="margin-bottom:var(--spacing-md);">
+                            <div class="task-stat-item primary">
+                                <div class="task-stat-value">¥${formatMoney(o.commission_amount)}</div>
+                                <div class="task-stat-label">${o.commission_type == 1 ? '固定佣金' : 'CPS分成'}</div>
+                            </div>
+                            <div class="task-stat-item">
+                                <div class="task-stat-value">${o.final_commission ? '¥' + formatMoney(o.final_commission) : '-'}</div>
+                                <div class="task-stat-label">实际收入</div>
+                            </div>
+                        </div>
+
+                        <div class="task-detail-info">
+                            <div class="info-row">
+                                <span class="info-icon">📋</span>
+                                <span class="info-label">任务名称</span>
+                                <span class="info-value">${o.task_title || '-'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-icon">🏪</span>
+                                <span class="info-label">商家</span>
+                                <span class="info-value">${o.shop_name || '-'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-icon">📅</span>
+                                <span class="info-label">报名时间</span>
+                                <span class="info-value">${formatDate(o.applied_at)}</span>
+                            </div>
+                            ${o.accepted_at ? `
+                            <div class="info-row">
+                                <span class="info-icon">✅</span>
+                                <span class="info-label">接单时间</span>
+                                <span class="info-value">${formatDate(o.accepted_at)}</span>
+                            </div>
+                            ` : ''}
+                            ${o.started_at ? `
+                            <div class="info-row">
+                                <span class="info-icon">🚀</span>
+                                <span class="info-label">开始时间</span>
+                                <span class="info-value">${formatDate(o.started_at)}</span>
+                            </div>
+                            ` : ''}
+                            ${o.completed_at ? `
+                            <div class="info-row">
+                                <span class="info-icon">🎉</span>
+                                <span class="info-label">完成时间</span>
+                                <span class="info-value">${formatDate(o.completed_at)}</span>
+                            </div>
+                            ` : ''}
+                            ${o.reject_reason ? `
+                            <div class="info-row">
+                                <span class="info-icon">❌</span>
+                                <span class="info-label">拒绝原因</span>
+                                <span class="info-value" style="color:var(--error-color);">${o.reject_reason}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+
+                        ${o.apply_note ? `
+                        <div class="task-detail-section" style="margin-top:var(--spacing-md);">
+                            <div class="section-title">📝 报名备注</div>
+                            <div class="section-content">${o.apply_note}</div>
+                        </div>
+                        ` : ''}
+                    `;
+
+                    let actions = '<button class="btn" onclick="closeModal(\'orderModal\')">关闭</button>';
+                    if (o.status == 2) {
+                        actions = `<button class="btn btn-primary" onclick="startWork(${o.id});closeModal('orderModal')">开始执行</button>` + actions;
+                    }
+                    if (o.status == 3) {
+                        actions = `<button class="btn btn-success" onclick="closeModal('orderModal');submitWork(${o.id})">提交作品</button>` + actions;
+                    }
+                    document.getElementById('orderActions').innerHTML = actions;
+                    openModal('orderModal');
+                } else {
+                    showToast(res.message || '加载失败', 'error');
+                }
+            } catch (err) {
+                showToast('加载失败', 'error');
+            }
+        }
+
+        async function startWork(id) {
+            if (!await confirm('确定开始执行该订单吗？')) return;
+            try {
+                const res = await post(`/influencer/orders/${id}/start`);
+                if (res.code === 0) {
+                    showToast('已开始执行');
+                    loadOrders(currentPage);
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } catch (err) {
+                showToast('操作失败', 'error');
+            }
+        }
+
+        async function submitWork(id) {
+            document.getElementById('submitOrderId').value = id;
+            document.getElementById('workStage').value = '3';
+            document.getElementById('publishUrl').value = '';
+            document.getElementById('workNote').value = '';
+            openModal('submitWorkModal');
+        }
+
+        async function doSubmitWork() {
+            const orderId = document.getElementById('submitOrderId').value;
+            const stage = document.getElementById('workStage').value;
+            const publishUrl = document.getElementById('publishUrl').value.trim();
+            const workNote = document.getElementById('workNote').value.trim();
+
+            if (!publishUrl) {
+                showToast('请输入作品发布链接', 'error');
+                return;
+            }
+
+            try {
+                const res = await post(`/influencer/orders/${orderId}/works`, {
+                    stage: parseInt(stage),
+                    publish_url: publishUrl,
+                    note: workNote
+                });
+                if (res.code === 0) {
+                    showToast('提交成功，等待审核');
+                    closeModal('submitWorkModal');
+                    loadOrders(currentPage);
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } catch (err) {
+                showToast('操作失败', 'error');
+            }
+        }
+
+        // 侧边栏切换
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+
+        // 下拉菜单切换
+        function toggleDropdown() {
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-dropdown')) {
+                document.getElementById('dropdownMenu').classList.remove('show');
+            }
+        });
+
+        // 加载用户信息
+        async function loadUserInfo() {
+            try {
+                const res = await get('/auth/profile');
+                if (res.code === 0) {
+                    const { user, influencer } = res.data;
+                    document.getElementById('userName').textContent = influencer?.nickname || user?.username || '达人';
+                    setUserAvatar(document.getElementById('userAvatar'), user?.avatar);
+                    window.currentUserId = user?.id;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // 聊天功能
+        let currentChatOrderId = null;
+        let chatPollingTimer = null;
+
+        async function openChat(orderId) {
+            currentChatOrderId = orderId;
+            document.getElementById('chatInput').value = '';
+            openModal('chatModal');
+            await loadMessages();
+            // 开始轮询新消息
+            chatPollingTimer = setInterval(loadMessages, 5000);
+        }
+
+        function closeChatModal() {
+            if (chatPollingTimer) {
+                clearInterval(chatPollingTimer);
+                chatPollingTimer = null;
+            }
+            closeModal('chatModal');
+        }
+
+        // 重写关闭弹窗函数以处理聊天轮询
+        const originalCloseModal = window.closeModal;
+        window.closeModal = function(id) {
+            if (id === 'chatModal' && chatPollingTimer) {
+                clearInterval(chatPollingTimer);
+                chatPollingTimer = null;
+            }
+            originalCloseModal(id);
+        };
+
+        async function loadMessages() {
+            if (!currentChatOrderId) return;
+            try {
+                const res = await get('/influencer/messages', { order_id: currentChatOrderId, per_page: 100 });
+                if (res.code === 0) {
+                    renderMessages(res.data.items);
+                }
+            } catch (err) {
+                console.error('加载消息失败', err);
+            }
+        }
+
+        function renderMessages(messages) {
+            const container = document.getElementById('chatMessages');
+            if (!messages || messages.length === 0) {
+                container.innerHTML = `
+                    <div class="chat-empty">
+                        <div class="chat-empty-icon">💬</div>
+                        <div>暂无消息，发送第一条消息开始沟通吧</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const currentUserId = window.currentUserId;
+            container.innerHTML = messages.map(msg => {
+                const isSelf = msg.sender_id == currentUserId;
+                const avatar = msg.avatar ? `<img src="${msg.avatar}" alt="">` : '👤';
+                return `
+                    <div class="chat-message ${isSelf ? 'self' : ''}">
+                        <div class="chat-avatar">${avatar}</div>
+                        <div class="chat-bubble">
+                            <div class="chat-bubble-content">${escapeHtml(msg.content)}</div>
+                            <div class="chat-bubble-time">${formatTime(msg.created_at)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // 滚动到底部
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTime(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const isToday = date.toDateString() === now.toDateString();
+            if (isToday) {
+                return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            }
+            return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const content = input.value.trim();
+            if (!content || !currentChatOrderId) return;
+
+            try {
+                const res = await post('/influencer/messages', {
+                    order_id: currentChatOrderId,
+                    content: content
+                });
+                if (res.code === 0) {
+                    input.value = '';
+                    await loadMessages();
+                } else {
+                    showToast(res.message || '发送失败', 'error');
+                }
+            } catch (err) {
+                showToast('发送失败', 'error');
+            }
+        }
+
+        // 初始化
+        window.currentUserId = null;
+        loadUserInfo();
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('status')) document.getElementById('filterStatus').value = urlParams.get('status');
+        loadOrders();
+    </script>
+</body>
+</html>

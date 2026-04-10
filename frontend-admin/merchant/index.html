@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商家中心 - 探店达人营销平台</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/merchant/assets/css/merchant.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- 遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/merchant/index.html" class="sidebar-logo">🔥 探店达人</a>
+                <span class="sidebar-badge">商家版</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/merchant/index.html" class="nav-item active">
+                    <span class="nav-icon">📊</span>
+                    <span>数据看板</span>
+                </a>
+                <a href="/merchant/tasks.html" class="nav-item">
+                    <span class="nav-icon">📋</span>
+                    <span>任务管理</span>
+                </a>
+                <a href="/merchant/orders.html" class="nav-item">
+                    <span class="nav-icon">📦</span>
+                    <span>订单管理</span>
+                </a>
+                <a href="/merchant/wallet.html" class="nav-item">
+                    <span class="nav-icon">💰</span>
+                    <span>财务中心</span>
+                </a>
+                <a href="/merchant/profile.html" class="nav-item">
+                    <span class="nav-icon">🏪</span>
+                    <span>店铺设置</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 顶部栏 -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="page-title">数据看板</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-dropdown">
+                        <div class="user-info" onclick="toggleDropdown()">
+                            <div class="user-avatar" id="userAvatar"></div>
+                            <span class="user-name" id="userName">商家</span>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="javascript:logout()" class="dropdown-item danger">
+                                <span>🚪</span>
+                                <span>退出登录</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 内容区 -->
+            <div class="content">
+                <!-- 统计卡片 -->
+                <div class="grid grid-4 mb-lg">
+                    <div class="stat-card">
+                        <div class="stat-card-icon balance">💰</div>
+                        <div class="stat-card-value" id="statBalance">0.00</div>
+                        <div class="stat-card-label">账户余额（元）</div>
+                        <div class="stat-card-trend" id="statFrozen">冻结: ¥0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon tasks">📋</div>
+                        <div class="stat-card-value" id="statActiveTasks">0</div>
+                        <div class="stat-card-label">进行中任务</div>
+                        <div class="stat-card-trend" id="statTotalTasks">累计发布: 0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon orders">📦</div>
+                        <div class="stat-card-value" id="statCompletedOrders">0</div>
+                        <div class="stat-card-label">已完成订单</div>
+                        <div class="stat-card-trend" id="statPendingOrders">待审核: 0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon spent">💳</div>
+                        <div class="stat-card-value" id="statTotalSpent">0.00</div>
+                        <div class="stat-card-label">累计支出（元）</div>
+                        <div class="stat-card-trend" id="statMonthSpent">本月: ¥0.00</div>
+                    </div>
+                </div>
+
+                <!-- 快捷操作 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">快捷操作</h3>
+                    </div>
+                    <div class="quick-actions">
+                        <a href="/merchant/tasks.html?action=create" class="quick-action-item">
+                            <span class="quick-action-icon">📝</span>
+                            <span>发布新任务</span>
+                        </a>
+                        <a href="/merchant/wallet.html?action=recharge" class="quick-action-item">
+                            <span class="quick-action-icon">💳</span>
+                            <span>账户充值</span>
+                        </a>
+                        <a href="/merchant/orders.html?status=4" class="quick-action-item">
+                            <span class="quick-action-icon">✅</span>
+                            <span>待审核订单</span>
+                        </a>
+                        <a href="/merchant/profile.html" class="quick-action-item">
+                            <span class="quick-action-icon">⚙️</span>
+                            <span>店铺设置</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 最近任务 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">最近任务</h3>
+                        <a href="/merchant/tasks.html" class="btn btn-secondary btn-sm">查看全部</a>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>任务标题</th>
+                                    <th>类型</th>
+                                    <th>佣金</th>
+                                    <th>报名/接单</th>
+                                    <th>状态</th>
+                                    <th>创建时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentTasks">
+                                <tr>
+                                    <td colspan="6" class="text-center text-secondary">暂无数据</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        // 下拉菜单切换
+        function toggleDropdown() {
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        }
+
+        // 点击外部关闭下拉菜单
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-dropdown')) {
+                document.getElementById('dropdownMenu').classList.remove('show');
+            }
+        });
+
+        // 加载数据
+        async function loadDashboard() {
+            try {
+                const res = await get('/merchant/dashboard');
+                if (res.code === 0) {
+                    const { tasks, orders, wallet } = res.data;
+
+                    document.getElementById('statBalance').textContent = formatMoney(wallet?.balance || 0);
+                    document.getElementById('statFrozen').textContent = '冻结: ¥' + formatMoney(wallet?.frozen_amount || 0);
+                    document.getElementById('statActiveTasks').textContent = tasks?.active || 0;
+                    document.getElementById('statTotalTasks').textContent = '累计发布: ' + (tasks?.total || 0);
+                    document.getElementById('statCompletedOrders').textContent = orders?.completed || 0;
+                    document.getElementById('statPendingOrders').textContent = '待审核: ' + (orders?.pending || 0);
+                    document.getElementById('statTotalSpent').textContent = formatMoney(wallet?.total_expense || 0);
+                    document.getElementById('statMonthSpent').textContent = '本月: ¥' + formatMoney(tasks?.month_spent || 0);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadRecentTasks() {
+            try {
+                const res = await get('/merchant/tasks', { per_page: 5 });
+                if (res.code === 0 && res.data.items.length > 0) {
+                    renderTasks(res.data.items);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderTasks(tasks) {
+            const tbody = document.getElementById('recentTasks');
+            tbody.innerHTML = tasks.map(task => `
+                <tr>
+                    <td><a href="/merchant/tasks.html?id=${task.id}">${task.title}</a></td>
+                    <td>${task.task_type == 1 ? '云探店' : '到店实探'}</td>
+                    <td>${task.commission_type == 1 ? '¥' + formatMoney(task.commission_amount) : task.cps_rate + '%分成'}</td>
+                    <td>${task.applied_count}/${task.accepted_count}</td>
+                    <td>${getStatusTag(task.status, 'task')}</td>
+                    <td>${formatDate(task.created_at)}</td>
+                </tr>
+            `).join('');
+        }
+
+        // 加载用户信息
+        async function loadUserInfo() {
+            try {
+                const res = await get('/auth/profile');
+                if (res.code === 0) {
+                    const { user, merchant } = res.data;
+                    document.getElementById('userName').textContent = merchant?.shop_name || user?.username || '商家';
+                    setUserAvatar(document.getElementById('userAvatar'), user?.avatar);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // 初始化
+        loadUserInfo();
+        loadDashboard();
+        loadRecentTasks();
+
+        // 侧边栏切换
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

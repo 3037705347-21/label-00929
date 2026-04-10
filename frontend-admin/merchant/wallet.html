@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>财务中心 - 商家中心</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/merchant/assets/css/merchant.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- 遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/merchant/index.html" class="sidebar-logo">🔥 探店达人</a>
+                <span class="sidebar-badge">商家版</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/merchant/index.html" class="nav-item"><span class="nav-icon">📊</span><span>数据看板</span></a>
+                <a href="/merchant/tasks.html" class="nav-item"><span class="nav-icon">📋</span><span>任务管理</span></a>
+                <a href="/merchant/orders.html" class="nav-item"><span class="nav-icon">📦</span><span>订单管理</span></a>
+                <a href="/merchant/wallet.html" class="nav-item active"><span class="nav-icon">💰</span><span>财务中心</span></a>
+                <a href="/merchant/profile.html" class="nav-item"><span class="nav-icon">🏪</span><span>店铺设置</span></a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="page-title">财务中心</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-dropdown">
+                        <div class="user-info" onclick="toggleDropdown()">
+                            <div class="user-avatar" id="userAvatar"></div>
+                            <span class="user-name" id="userName">商家</span>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="javascript:logout()" class="dropdown-item danger">
+                                <span>🚪</span>
+                                <span>退出登录</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <div class="grid grid-3 mb-lg">
+                    <div class="stat-card">
+                        <div class="stat-card-icon balance">💰</div>
+                        <div class="stat-card-value" id="balance">0.00</div>
+                        <div class="stat-card-label">可用余额（元）</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon tasks">🔒</div>
+                        <div class="stat-card-value" id="frozen">0.00</div>
+                        <div class="stat-card-label">冻结金额（元）</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon spent">💳</div>
+                        <div class="stat-card-value" id="totalExpense">0.00</div>
+                        <div class="stat-card-label">累计支出（元）</div>
+                    </div>
+                </div>
+
+                <div class="card mb-md">
+                    <div class="card-header">
+                        <h3 class="card-title">账户充值</h3>
+                    </div>
+                    <div class="recharge-box">
+                        <div class="recharge-input-group">
+                            <span class="recharge-currency">¥</span>
+                            <input type="number" class="recharge-input" name="amount" id="rechargeAmount" placeholder="请输入充值金额" min="1" step="0.01" required>
+                        </div>
+                        <div class="recharge-options">
+                            <div class="recharge-quick">
+                                <span class="recharge-quick-label">快捷金额：</span>
+                                <button type="button" class="recharge-quick-btn" onclick="setAmount(100)">100</button>
+                                <button type="button" class="recharge-quick-btn" onclick="setAmount(500)">500</button>
+                                <button type="button" class="recharge-quick-btn" onclick="setAmount(1000)">1000</button>
+                                <button type="button" class="recharge-quick-btn" onclick="setAmount(5000)">5000</button>
+                            </div>
+                            <div class="pay-method-group">
+                                <span class="pay-method-label">支付方式：</span>
+                                <div class="pay-method-options">
+                                    <label class="pay-method-option active" onclick="selectPayMethod('wechat')">
+                                        <input type="radio" name="pay_method" value="wechat" checked>
+                                        <span class="pay-method-icon">💚</span>
+                                        <span class="pay-method-name">微信支付</span>
+                                    </label>
+                                    <label class="pay-method-option" onclick="selectPayMethod('alipay')">
+                                        <input type="radio" name="pay_method" value="alipay">
+                                        <span class="pay-method-icon">💙</span>
+                                        <span class="pay-method-name">支付宝</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-lg recharge-btn" onclick="doRecharge()">立即充值</button>
+                        <p class="recharge-hint">💡 充值后可用于发布任务，任务发布时将冻结相应预算</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">交易记录</h3>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>流水号</th>
+                                    <th>类型</th>
+                                    <th>金额</th>
+                                    <th>余额</th>
+                                    <th>说明</th>
+                                    <th>时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionList">
+                                <tr><td colspan="6" class="text-center text-secondary">暂无记录</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="pagination"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 支付弹窗 -->
+    <div class="modal-overlay" id="payModal">
+        <div class="modal" style="max-width:400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">💳 扫码支付</h3>
+                <button class="modal-close" onclick="closePayModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align:center;">
+                <div class="pay-amount">¥<span id="payAmount">0.00</span></div>
+                <div class="pay-qrcode" id="payQrcode">
+                    <div class="pay-qrcode-placeholder">
+                        <div class="loading-spinner"></div>
+                        <p>正在生成支付码...</p>
+                    </div>
+                </div>
+                <div class="pay-method-tip" id="payMethodTip">请使用微信扫码支付</div>
+                <div class="pay-status" id="payStatus">
+                    <span class="pay-status-icon">⏳</span>
+                    <span class="pay-status-text">等待支付...</span>
+                </div>
+                <div class="pay-expire" id="payExpire">支付将在 <span id="expireCountdown">30:00</span> 后过期</div>
+            </div>
+            <div class="modal-footer" style="justify-content:center;">
+                <button class="btn btn-secondary" onclick="closePayModal()">取消支付</button>
+                <button class="btn btn-primary" onclick="checkPayStatus()">我已支付</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        const typeNames = {1:'充值',2:'消费',3:'冻结',4:'解冻',5:'结算',6:'提现',7:'退款',8:'服务费'};
+
+        // 下拉菜单切换
+        function toggleDropdown() {
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-dropdown')) {
+                document.getElementById('dropdownMenu').classList.remove('show');
+            }
+        });
+
+        // 加载用户信息
+        async function loadUserInfo() {
+            try {
+                const res = await get('/auth/profile');
+                if (res.code === 0 && res.data) {
+                    const { user, merchant } = res.data;
+                    document.getElementById('userName').textContent = merchant?.shop_name || user?.username || '商家';
+                    setUserAvatar(document.getElementById('userAvatar'), user?.avatar);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadWallet() {
+            const res = await get('/merchant/wallet');
+            if (res.code === 0) {
+                document.getElementById('balance').textContent = formatMoney(res.data.balance);
+                document.getElementById('frozen').textContent = formatMoney(res.data.frozen_amount);
+                document.getElementById('totalExpense').textContent = formatMoney(res.data.total_expense);
+            }
+        }
+
+        async function loadTransactions(page = 1) {
+            const res = await get('/merchant/transactions', { page });
+            if (res.code === 0 && res.data.items.length > 0) {
+                document.getElementById('transactionList').innerHTML = res.data.items.map(t => `
+                    <tr>
+                        <td>${t.trans_no}</td>
+                        <td>${typeNames[t.type] || t.type}</td>
+                        <td class="${[1,4,5,7].includes(t.type) ? 'text-success' : 'text-danger'}">
+                            ${[1,4,5,7].includes(t.type) ? '+' : '-'}¥${formatMoney(t.amount)}
+                        </td>
+                        <td>¥${formatMoney(t.balance_after)}</td>
+                        <td>${t.description || '-'}</td>
+                        <td>${formatDate(t.created_at, 'YYYY-MM-DD HH:mm')}</td>
+                    </tr>
+                `).join('');
+                renderPagination(document.getElementById('pagination'), res.data.pagination, loadTransactions);
+            }
+        }
+
+        function setAmount(amount) {
+            document.getElementById('rechargeAmount').value = amount;
+            // 更新快捷按钮选中状态
+            document.querySelectorAll('.recharge-quick-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.textContent) === amount);
+            });
+        }
+
+        function selectPayMethod(method) {
+            document.querySelectorAll('.pay-method-option').forEach(opt => {
+                opt.classList.toggle('active', opt.querySelector('input').value === method);
+            });
+            document.querySelector(`input[value="${method}"]`).checked = true;
+        }
+
+        let currentOrderNo = null;
+        let payCheckTimer = null;
+        let expireTimer = null;
+
+        async function doRecharge() {
+            const amount = document.getElementById('rechargeAmount').value;
+            if (!amount || amount <= 0) {
+                showToast('请输入充值金额', 'error');
+                return;
+            }
+
+            const payMethod = document.querySelector('input[name="pay_method"]:checked').value;
+            const btn = document.querySelector('.recharge-btn');
+            btn.disabled = true;
+
+            try {
+                const res = await post('/payment/recharge', {
+                    amount: parseFloat(amount),
+                    pay_method: payMethod
+                });
+
+                if (res.code === 0) {
+                    currentOrderNo = res.data.order_no;
+                    showPayModal(res.data);
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } catch (err) {
+                showToast('创建订单失败', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function showPayModal(data) {
+            document.getElementById('payAmount').textContent = formatMoney(data.amount);
+
+            const payData = data.pay_data;
+            const qrcodeEl = document.getElementById('payQrcode');
+
+            // 根据支付方式显示不同内容
+            if (data.pay_method === 'wechat') {
+                document.getElementById('payMethodTip').textContent = '请使用微信扫码支付';
+                if (payData.type === 'qrcode') {
+                    qrcodeEl.innerHTML = `
+                        <div class="qrcode-box">
+                            <div class="qrcode-placeholder">
+                                <span style="font-size:64px;">📱</span>
+                                <p style="margin-top:10px;color:#666;">微信扫码支付</p>
+                                ${payData.is_sandbox ? '<p style="color:#faad14;font-size:12px;">（开发环境模拟）</p>' : ''}
+                                ${payData.is_sandbox ? '<button class="btn btn-success" style="margin-top:15px;" onclick="simulatePay()">模拟支付成功</button>' : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                document.getElementById('payMethodTip').textContent = '请使用支付宝扫码或跳转支付';
+                if (payData.type === 'redirect') {
+                    qrcodeEl.innerHTML = `
+                        <div class="qrcode-box">
+                            <div class="qrcode-placeholder">
+                                <span style="font-size:64px;">💳</span>
+                                <p style="margin-top:10px;color:#666;">支付宝支付</p>
+                                ${payData.is_sandbox ? '<p style="color:#faad14;font-size:12px;">（开发环境模拟）</p>' : ''}
+                                ${payData.is_sandbox ? '<button class="btn btn-success" style="margin-top:15px;" onclick="simulatePay()">模拟支付成功</button>' : '<a href="' + payData.pay_url + '" target="_blank" class="btn btn-primary" style="margin-top:15px;">前往支付宝支付</a>'}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            // 重置状态
+            document.getElementById('payStatus').innerHTML = `
+                <span class="pay-status-icon">⏳</span>
+                <span class="pay-status-text">等待支付...</span>
+            `;
+
+            // 开始倒计时
+            startExpireCountdown(30 * 60);
+
+            // 开始轮询支付状态
+            startPayCheck();
+
+            openModal('payModal');
+        }
+
+        function closePayModal() {
+            stopPayCheck();
+            stopExpireCountdown();
+            closeModal('payModal');
+        }
+
+        function startExpireCountdown(seconds) {
+            let remaining = seconds;
+            const updateCountdown = () => {
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                document.getElementById('expireCountdown').textContent =
+                    `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+                if (remaining <= 0) {
+                    stopExpireCountdown();
+                    document.getElementById('payStatus').innerHTML = `
+                        <span class="pay-status-icon">❌</span>
+                        <span class="pay-status-text" style="color:var(--error-color);">支付已过期</span>
+                    `;
+                    return;
+                }
+                remaining--;
+            };
+
+            updateCountdown();
+            expireTimer = setInterval(updateCountdown, 1000);
+        }
+
+        function stopExpireCountdown() {
+            if (expireTimer) {
+                clearInterval(expireTimer);
+                expireTimer = null;
+            }
+        }
+
+        function startPayCheck() {
+            payCheckTimer = setInterval(checkPayStatus, 3000);
+        }
+
+        function stopPayCheck() {
+            if (payCheckTimer) {
+                clearInterval(payCheckTimer);
+                payCheckTimer = null;
+            }
+        }
+
+        async function checkPayStatus() {
+            if (!currentOrderNo) return;
+
+            try {
+                const res = await get('/payment/query', { order_no: currentOrderNo });
+                if (res.code === 0) {
+                    if (res.data.status === 1) {
+                        // 支付成功
+                        stopPayCheck();
+                        stopExpireCountdown();
+                        document.getElementById('payStatus').innerHTML = `
+                            <span class="pay-status-icon">✅</span>
+                            <span class="pay-status-text" style="color:var(--success-color);">支付成功！</span>
+                        `;
+                        showToast('充值成功');
+
+                        setTimeout(() => {
+                            closePayModal();
+                            document.getElementById('rechargeAmount').value = '';
+                            document.querySelectorAll('.recharge-quick-btn').forEach(btn => btn.classList.remove('active'));
+                            loadWallet();
+                            loadTransactions();
+                        }, 1500);
+                    } else if (res.data.status === 2) {
+                        // 支付失败
+                        stopPayCheck();
+                        document.getElementById('payStatus').innerHTML = `
+                            <span class="pay-status-icon">❌</span>
+                            <span class="pay-status-text" style="color:var(--error-color);">支付失败</span>
+                        `;
+                    }
+                }
+            } catch (err) {
+                console.error('查询支付状态失败', err);
+            }
+        }
+
+        async function simulatePay() {
+            if (!currentOrderNo) return;
+
+            try {
+                const res = await post('/payment/simulate', { order_no: currentOrderNo });
+                if (res.code === 0) {
+                    checkPayStatus();
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } catch (err) {
+                showToast('模拟支付失败', 'error');
+            }
+        }
+
+        loadUserInfo();
+        loadWallet();
+        loadTransactions();
+
+        // 检查URL参数，处理支付宝同步返回
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderNo = urlParams.get('order_no');
+        if (orderNo) {
+            currentOrderNo = orderNo;
+            checkPayStatus();
+            // 清除URL参数
+            window.history.replaceState({}, '', '/merchant/wallet.html');
+        }
+
+        // 侧边栏切换
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人资料 - 达人中心</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/influencer/assets/css/influencer.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- 遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/influencer/index.html" class="sidebar-logo">🔥 探店达人</a>
+                <span class="sidebar-badge">达人版</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/influencer/index.html" class="nav-item"><span class="nav-icon">🏠</span><span>首页</span></a>
+                <a href="/influencer/tasks.html" class="nav-item"><span class="nav-icon">📋</span><span>任务大厅</span></a>
+                <a href="/influencer/orders.html" class="nav-item"><span class="nav-icon">📦</span><span>我的订单</span></a>
+                <a href="/influencer/wallet.html" class="nav-item"><span class="nav-icon">💰</span><span>收益中心</span></a>
+                <a href="/influencer/profile.html" class="nav-item active"><span class="nav-icon">👤</span><span>个人资料</span></a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="page-title">个人资料</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-dropdown">
+                        <div class="user-info" onclick="toggleDropdown()">
+                            <div class="user-avatar" id="userAvatar"></div>
+                            <span class="user-name" id="userName">达人</span>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="javascript:logout()" class="dropdown-item danger">
+                                <span>🚪</span>
+                                <span>退出登录</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <div class="form-page">
+                    <!-- 认证状态 -->
+                    <div class="card mb-md" id="verifyCard">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-bold mb-xs">认证状态</h3>
+                                <p class="text-secondary" id="verifyStatus">加载中...</p>
+                            </div>
+                            <span id="verifyTag"></span>
+                        </div>
+                    </div>
+
+                    <form id="profileForm">
+                        <div class="form-section">
+                            <h3 class="form-section-title" data-icon="👤">基本信息</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label required"><span class="label-icon">📝</span>昵称</label>
+                                    <input type="text" class="form-control" name="nickname" placeholder="请输入昵称" required>
+                                    <span class="form-error">请输入昵称</span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label"><span class="label-icon">⚧</span>性别</label>
+                                    <select class="form-control" name="gender">
+                                        <option value="0">保密</option>
+                                        <option value="1">男</option>
+                                        <option value="2">女</option>
+                                    </select>
+                                    <span class="form-error"></span>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label"><span class="label-icon">🏠</span>所在省份</label>
+                                    <input type="text" class="form-control" name="province" placeholder="如：广东省">
+                                    <span class="form-error"></span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label"><span class="label-icon">🏙️</span>所在城市</label>
+                                    <input type="text" class="form-control" name="city" placeholder="如：深圳市">
+                                    <span class="form-error"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><span class="label-icon">📄</span>个人简介</label>
+                                <textarea class="form-control" name="bio" rows="3" placeholder="介绍一下自己吧，让商家更了解你"></textarea>
+                                <span class="form-error"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3 class="form-section-title" data-icon="📱">平台账号（认证必填）</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label required"><span class="label-icon">🎯</span>主平台</label>
+                                    <select class="form-control" name="platform_type" required>
+                                        <option value="douyin">抖音</option>
+                                        <option value="xiaohongshu">小红书</option>
+                                        <option value="kuaishou">快手</option>
+                                    </select>
+                                    <span class="form-error">请选择主平台</span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label required"><span class="label-icon">🆔</span>平台账号ID</label>
+                                    <input type="text" class="form-control" name="platform_account" placeholder="请输入平台账号ID" required>
+                                    <span class="form-error">请输入平台账号ID</span>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label required"><span class="label-icon">👥</span>粉丝数</label>
+                                    <input type="number" class="form-control" name="follower_count" placeholder="请输入粉丝数" required min="0">
+                                    <span class="form-error">请输入粉丝数</span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label"><span class="label-icon">🔗</span>主页链接</label>
+                                    <input type="url" class="form-control" name="platform_url" placeholder="请输入主页链接">
+                                    <span class="form-error">请输入正确的链接格式</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><span class="label-icon">🎨</span>内容风格</label>
+                                <input type="text" class="form-control" name="content_style" placeholder="如：搞笑、测评、Vlog、美食探店">
+                                <span class="form-error"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3 class="form-section-title" data-icon="📊">数据表现</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label"><span class="label-icon">👁️</span>平均播放量</label>
+                                    <input type="number" class="form-control" name="avg_views" placeholder="近期作品平均播放量" min="0">
+                                    <span class="form-error">请输入有效数字</span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label"><span class="label-icon">❤️</span>平均点赞数</label>
+                                    <input type="number" class="form-control" name="avg_likes" placeholder="近期作品平均点赞数" min="0">
+                                    <span class="form-error">请输入有效数字</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-lg">💾 保存资料</button>
+                            <button type="button" class="btn btn-success btn-lg" id="submitVerifyBtn" style="display:none;">🚀 提交认证</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        let currentInfluencer = null;
+
+        async function loadProfile() {
+            const res = await get('/influencer/profile');
+            if (res.code === 0) {
+                currentInfluencer = res.data;
+                fillForm(res.data);
+                updateVerifyStatus(res.data.verify_status);
+                // 更新顶部用户信息
+                document.getElementById('userName').textContent = res.data.nickname || '达人';
+                setUserAvatar(document.getElementById('userAvatar'), null);
+            }
+        }
+
+        function fillForm(data) {
+            const form = document.getElementById('profileForm');
+            ['nickname','gender','province','city','bio','platform_type','platform_account',
+             'follower_count','platform_url','content_style','avg_views','avg_likes'].forEach(field => {
+                if (form[field] && data[field] !== null) {
+                    form[field].value = data[field];
+                }
+            });
+        }
+
+        function updateVerifyStatus(status) {
+            const statusText = {0:'待审核',1:'已认证',2:'审核拒绝'};
+            const statusClass = {0:'tag-warning',1:'tag-success',2:'tag-danger'};
+
+            document.getElementById('verifyStatus').textContent =
+                status === 1 ? '您已通过达人认证，可以正常接单' :
+                status === 0 ? '您的认证申请正在审核中' :
+                '认证被拒绝，请完善资料后重新提交';
+
+            document.getElementById('verifyTag').innerHTML = `<span class="tag ${statusClass[status]}">${statusText[status]}</span>`;
+
+            if (status !== 1) {
+                document.getElementById('submitVerifyBtn').style.display = 'inline-flex';
+            }
+        }
+
+        document.getElementById('profileForm').onsubmit = async (e) => {
+            e.preventDefault();
+
+            // 表单校验
+            if (!validateForm()) {
+                return;
+            }
+
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+
+            try {
+                const res = await put('/influencer/profile', data);
+                if (res.code === 0) {
+                    showToast('保存成功');
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        // 表单校验函数
+        function validateForm() {
+            let isValid = true;
+            const form = document.getElementById('profileForm');
+
+            // 清除所有错误状态
+            form.querySelectorAll('.form-group').forEach(group => {
+                group.classList.remove('has-error');
+            });
+
+            // 校验必填字段
+            const requiredFields = [
+                { name: 'nickname', message: '请输入昵称' },
+                { name: 'platform_account', message: '请输入平台账号ID' },
+                { name: 'follower_count', message: '请输入粉丝数' }
+            ];
+
+            requiredFields.forEach(field => {
+                const input = form[field.name];
+                if (!input.value.trim()) {
+                    showFieldError(input, field.message);
+                    isValid = false;
+                }
+            });
+
+            // 校验URL格式
+            const urlInput = form['platform_url'];
+            if (urlInput.value && !isValidUrl(urlInput.value)) {
+                showFieldError(urlInput, '请输入正确的链接格式');
+                isValid = false;
+            }
+
+            // 校验数字字段
+            const numberFields = ['follower_count', 'avg_views', 'avg_likes'];
+            numberFields.forEach(fieldName => {
+                const input = form[fieldName];
+                if (input.value && (isNaN(input.value) || parseInt(input.value) < 0)) {
+                    showFieldError(input, '请输入有效数字');
+                    isValid = false;
+                }
+            });
+
+            return isValid;
+        }
+
+        // 显示字段错误
+        function showFieldError(input, message) {
+            const formGroup = input.closest('.form-group');
+            if (formGroup) {
+                formGroup.classList.add('has-error');
+                const errorEl = formGroup.querySelector('.form-error');
+                if (errorEl) {
+                    errorEl.textContent = message;
+                }
+            }
+        }
+
+        // 清除字段错误
+        function clearFieldError(input) {
+            const formGroup = input.closest('.form-group');
+            if (formGroup) {
+                formGroup.classList.remove('has-error');
+            }
+        }
+
+        // URL格式校验
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        // 输入时清除错误状态
+        document.getElementById('profileForm').addEventListener('input', function(e) {
+            if (e.target.classList.contains('form-control')) {
+                clearFieldError(e.target);
+            }
+        });
+
+        document.getElementById('submitVerifyBtn').onclick = async () => {
+            const form = document.getElementById('profileForm');
+
+            // 校验认证必填字段
+            let isValid = true;
+
+            if (!form.platform_account.value.trim()) {
+                showFieldError(form.platform_account, '请输入平台账号ID');
+                isValid = false;
+            }
+
+            if (!form.follower_count.value || parseInt(form.follower_count.value) <= 0) {
+                showFieldError(form.follower_count, '请输入有效的粉丝数');
+                isValid = false;
+            }
+
+            if (!isValid) {
+                showToast('请先填写平台账号和粉丝数', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('submitVerifyBtn');
+            btn.disabled = true;
+
+            try {
+                // 先保存资料
+                const formData = new FormData(form);
+                await put('/influencer/profile', Object.fromEntries(formData));
+
+                // 提交认证
+                const res = await post('/influencer/verify', {
+                    platform_type: form.platform_type.value,
+                    platform_account: form.platform_account.value,
+                    follower_count: parseInt(form.follower_count.value),
+                    follower_screenshot: '/uploads/placeholder.jpg'
+                });
+
+                if (res.code === 0) {
+                    showToast('认证申请已提交');
+                    updateVerifyStatus(0);
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        loadProfile();
+
+        // 侧边栏切换
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+
+        // 下拉菜单切换
+        function toggleDropdown() {
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-dropdown')) {
+                document.getElementById('dropdownMenu').classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

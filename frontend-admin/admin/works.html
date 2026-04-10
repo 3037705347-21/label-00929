@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作品审核 - 管理后台</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/admin/assets/css/admin.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- 遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/admin/index.html" class="sidebar-logo">🔐 管理后台</a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/admin/index.html" class="nav-item"><span class="nav-icon">📊</span><span>数据看板</span></a>
+                <div class="nav-group">
+                    <div class="nav-group-title">用户管理</div>
+                    <a href="/admin/merchants.html" class="nav-item"><span class="nav-icon">🏪</span><span>商家管理</span></a>
+                    <a href="/admin/influencers.html" class="nav-item"><span class="nav-icon">🎬</span><span>达人管理</span></a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">内容管理</div>
+                    <a href="/admin/tasks.html" class="nav-item"><span class="nav-icon">📋</span><span>任务审核</span></a>
+                    <a href="/admin/works.html" class="nav-item active"><span class="nav-icon">🎨</span><span>作品审核</span></a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">财务管理</div>
+                    <a href="/admin/withdrawals.html" class="nav-item"><span class="nav-icon">💳</span><span>提现审核</span></a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">系统设置</div>
+                    <a href="/admin/categories.html" class="nav-item"><span class="nav-icon">📁</span><span>分类管理</span></a>
+                    <a href="/admin/settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span>系统配置</span></a>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="page-title">作品审核</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-dropdown">
+                        <div class="user-info" onclick="toggleDropdown()">
+                            <div class="user-avatar" id="userAvatar"></div>
+                            <span class="user-name" id="userName">管理员</span>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="javascript:logout()" class="dropdown-item danger"><span>🚪</span><span>退出登录</span></a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <div class="filter-bar" style="background:white;padding:var(--spacing-md);border-radius:var(--radius-lg);margin-bottom:var(--spacing-md);">
+                    <select class="form-control" style="width:150px;" id="filterStatus">
+                        <option value="">全部状态</option>
+                        <option value="0">待审核</option>
+                        <option value="1">已通过</option>
+                        <option value="2">已拒绝</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="loadWorks()">搜索</button>
+                </div>
+
+                <div class="card">
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>作品标题</th>
+                                    <th>达人</th>
+                                    <th>关联任务</th>
+                                    <th>发布平台</th>
+                                    <th>发布链接</th>
+                                    <th>状态</th>
+                                    <th>提交时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="workList">
+                                <tr><td colspan="9" class="text-center text-secondary">加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="pagination"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 作品详情弹窗 -->
+    <div class="modal-overlay" id="workModal">
+        <div class="modal" style="max-width:700px;">
+            <div class="modal-header">
+                <h3 class="modal-title">作品详情</h3>
+                <button class="modal-close" onclick="closeModal('workModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="workDetail"></div>
+            <div class="modal-footer" id="workActions"></div>
+        </div>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        const user = getUser();
+        if (!user || user.user_type != 3) window.location.href = '/admin/login.html';
+
+        function toggleDropdown() { document.getElementById('dropdownMenu').classList.toggle('show'); }
+        document.addEventListener('click', e => { if (!e.target.closest('.user-dropdown')) document.getElementById('dropdownMenu').classList.remove('show'); });
+
+        function loadUserInfo() {
+            if (user) {
+                document.getElementById('userName').textContent = user.username;
+                setUserAvatar(document.getElementById('userAvatar'), user.avatar);
+            }
+        }
+
+        let currentPage = 1;
+
+        async function loadWorks(page = 1) {
+            currentPage = page;
+            const status = document.getElementById('filterStatus').value;
+            try {
+                const res = await get('/admin/works', { page, status: status || undefined });
+                if (res.code === 0) {
+                    renderWorks(res.data.items);
+                    renderPagination(document.getElementById('pagination'), res.data.pagination, loadWorks);
+                }
+            } catch (err) { showToast('加载失败', 'error'); }
+        }
+
+        function renderWorks(works) {
+            const tbody = document.getElementById('workList');
+            if (!works.length) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-secondary">暂无数据</td></tr>';
+                return;
+            }
+            tbody.innerHTML = works.map(w => `
+                <tr>
+                    <td>${w.id}</td>
+                    <td><a href="javascript:viewWork(${w.id})" class="text-primary">${w.title || '作品' + w.id}</a></td>
+                    <td>${w.influencer_name || '-'}</td>
+                    <td>${w.task_title || '-'}</td>
+                    <td>${w.platform || '-'}</td>
+                    <td>${w.publish_url ? `<a href="${w.publish_url}" target="_blank" class="text-primary">查看</a>` : '-'}</td>
+                    <td>${getStatusTag(w.review_status, 'verify')}</td>
+                    <td>${formatDate(w.created_at)}</td>
+                    <td>
+                        ${w.review_status == 0 ? `
+                            <button class="btn btn-success btn-sm" onclick="approveWork(${w.id})">通过</button>
+                            <button class="btn btn-danger btn-sm" onclick="rejectWork(${w.id})">拒绝</button>
+                        ` : `<button class="btn btn-sm" onclick="viewWork(${w.id})">查看</button>`}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function viewWork(id) {
+            try {
+                const res = await get(`/admin/works/${id}`);
+                if (res.code === 0) {
+                    const w = res.data;
+                    document.getElementById('workDetail').innerHTML = `
+                        <div class="detail-section">
+                            <div class="detail-row"><div class="detail-label">作品标题</div><div class="detail-value">${w.title || '-'}</div></div>
+                            <div class="detail-row"><div class="detail-label">达人</div><div class="detail-value">${w.influencer_name || '-'}</div></div>
+                            <div class="detail-row"><div class="detail-label">关联任务</div><div class="detail-value">${w.task_title || '-'}</div></div>
+                            <div class="detail-row"><div class="detail-label">发布平台</div><div class="detail-value">${w.platform || '-'}</div></div>
+                            <div class="detail-row"><div class="detail-label">发布链接</div><div class="detail-value">${w.publish_url ? `<a href="${w.publish_url}" target="_blank">${w.publish_url}</a>` : '-'}</div></div>
+                            <div class="detail-row"><div class="detail-label">作品描述</div><div class="detail-value">${w.description || '-'}</div></div>
+                            ${w.images ? `<div class="detail-row"><div class="detail-label">作品图片</div><div class="detail-value"><div style="display:flex;gap:8px;flex-wrap:wrap;">${JSON.parse(w.images).map(img => `<img src="${img}" style="width:100px;height:100px;object-fit:cover;border-radius:4px;">`).join('')}</div></div></div>` : ''}
+                            <div class="detail-row"><div class="detail-label">浏览量</div><div class="detail-value">${formatNumber(w.view_count || 0)}</div></div>
+                            <div class="detail-row"><div class="detail-label">点赞数</div><div class="detail-value">${formatNumber(w.like_count || 0)}</div></div>
+                            <div class="detail-row"><div class="detail-label">评论数</div><div class="detail-value">${formatNumber(w.comment_count || 0)}</div></div>
+                            <div class="detail-row"><div class="detail-label">状态</div><div class="detail-value">${getStatusTag(w.review_status, 'verify')}</div></div>
+                            <div class="detail-row"><div class="detail-label">提交时间</div><div class="detail-value">${formatDate(w.created_at)}</div></div>
+                        </div>
+                    `;
+                    document.getElementById('workActions').innerHTML = w.review_status == 0 ? `
+                        <button class="btn btn-success" onclick="approveWork(${w.id});closeModal('workModal')">审核通过</button>
+                        <button class="btn btn-danger" onclick="rejectWork(${w.id});closeModal('workModal')">审核拒绝</button>
+                    ` : `<button class="btn" onclick="closeModal('workModal')">关闭</button>`;
+                    openModal('workModal');
+                }
+            } catch (err) { showToast('加载失败', 'error'); }
+        }
+
+        async function approveWork(id) {
+            if (!await confirm('确定通过该作品的审核吗？')) return;
+            try {
+                const res = await post(`/admin/works/${id}/review`, { approved: true });
+                if (res.code === 0) { showToast('审核通过'); loadWorks(currentPage); }
+                else showToast(res.message, 'error');
+            } catch (err) { showToast('操作失败', 'error'); }
+        }
+
+        async function rejectWork(id) {
+            const note = await prompt('请输入拒绝原因：');
+            if (note === null) return;
+            try {
+                const res = await post(`/admin/works/${id}/review`, { approved: false, note });
+                if (res.code === 0) { showToast('已拒绝'); loadWorks(currentPage); }
+                else showToast(res.message, 'error');
+            } catch (err) { showToast('操作失败', 'error'); }
+        }
+
+        loadUserInfo();
+        loadWorks();
+
+        // 侧边栏切换
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

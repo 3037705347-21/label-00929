@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>探店达人营销平台 - 连接商家与达人</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <style>
+        /* 导航栏 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: white;
+            box-shadow: var(--shadow-sm);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-xl);
+        }
+
+        .navbar-brand {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-color);
+            flex-shrink: 0;
+        }
+
+        .navbar-center {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xl);
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .navbar-center a {
+            color: var(--text-primary);
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .navbar-center a:hover,
+        .navbar-center a.active {
+            color: var(--primary-color);
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .navbar-right .btn-register {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .navbar-right .btn-register:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Hero 区域 */
+        .hero {
+            padding: 120px 0 80px;
+            background: linear-gradient(135deg, #FFF4F0 0%, #FFFFFF 100%);
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .hero h1 span {
+            color: var(--primary-color);
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xl);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: center;
+        }
+
+        .hero-buttons .btn {
+            padding: 0 var(--spacing-xl);
+            height: 48px;
+            font-size: 16px;
+        }
+
+        /* 特性区域 - 白色背景 */
+        .features {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: var(--spacing-xxl);
+        }
+
+        .section-title h2 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .section-title p {
+            color: var(--text-secondary);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-lg);
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            text-align: center;
+            box-shadow: var(--shadow-card);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            background: var(--primary-light);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin: 0 auto var(--spacing-md);
+        }
+
+        .feature-card h3 {
+            font-size: 18px;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* 内容广场预览 - 浅灰背景区分 */
+        .showcase-preview {
+            padding: 80px 0;
+            background: #f3f4f6;
+        }
+
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--spacing-md);
+        }
+
+        .showcase-item {
+            background: white;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-card);
+            transition: transform 0.3s;
+        }
+
+        .showcase-item:hover {
+            transform: translateY(-4px);
+        }
+
+        .showcase-cover {
+            width: 100%;
+            height: 200px;
+            background: var(--bg-light);
+            object-fit: cover;
+        }
+
+        .showcase-info {
+            padding: var(--spacing-md);
+        }
+
+        .showcase-title {
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .showcase-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .showcase-author {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .showcase-author img {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+
+        /* CTA 区域 */
+        .cta {
+            padding: 80px 0;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #FF8F5E 100%);
+            text-align: center;
+            color: white;
+        }
+
+        .cta h2 {
+            font-size: 32px;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .cta p {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .cta .btn {
+            background: white;
+            color: var(--primary-color);
+        }
+
+        .cta .btn:hover {
+            background: var(--bg-light);
+        }
+
+        /* 页脚 */
+        .footer {
+            padding: var(--spacing-xl) 0;
+            background: var(--bg-dark);
+            color: white;
+            text-align: center;
+        }
+
+        .footer p {
+            opacity: 0.7;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .showcase-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .navbar-center {
+                display: none;
+            }
+
+            .navbar-right .btn {
+                padding: 0 var(--spacing-sm);
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">🔥 探店达人</a>
+        <div class="navbar-center">
+            <a href="/" class="active">首页</a>
+            <a href="/showcase.html">内容广场</a>
+        </div>
+        <div class="navbar-right">
+            <a href="/login.html" class="btn btn-secondary">登录</a>
+            <a href="/login.html?tab=register" class="btn btn-register">免费注册</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <h1>连接<span>商家</span>与<span>达人</span><br>的探店营销平台</h1>
+            <p>一站式探店任务发布、达人接单、内容创作、效果追踪与佣金结算，让本地营销更简单高效</p>
+            <div class="hero-buttons">
+                <a href="/login.html" class="btn btn-primary btn-lg">我是商家</a>
+                <a href="/login.html" class="btn btn-secondary btn-lg">我是达人</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 特性 -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-title">
+                <h2>为什么选择我们</h2>
+                <p>专业的探店营销解决方案</p>
+            </div>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3>任务发布便捷</h3>
+                    <p>商家可快速发布探店任务，设置佣金、要求，精准匹配达人</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>达人精准匹配</h3>
+                    <p>基于粉丝量、内容风格、历史数据多维度筛选，找到最合适的达人</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>效果实时追踪</h3>
+                    <p>曝光量、互动数据、核销转化一目了然，营销效果清晰可见</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3>佣金自动结算</h3>
+                    <p>支持一口价和CPS分成，任务完成自动结算，资金安全有保障</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">✅</div>
+                    <h3>内容质量把控</h3>
+                    <p>脚本、素材、成片分阶段审核，确保内容质量符合预期</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏆</div>
+                    <h3>案例展示推广</h3>
+                    <p>优质作品展示在内容广场，提升达人曝光，吸引更多商家合作</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 内容广场预览 -->
+    <section class="showcase-preview" id="showcase">
+        <div class="container">
+            <div class="section-title">
+                <h2>精选探店案例</h2>
+                <p>看看达人们的精彩作品</p>
+            </div>
+            <div class="showcase-grid" id="showcaseList">
+                <!-- 动态加载 -->
+            </div>
+            <div class="text-center mt-lg">
+                <a href="/showcase.html" class="btn btn-secondary">查看更多案例</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+        <div class="container">
+            <h2>立即开始您的探店营销之旅</h2>
+            <p>无论您是商家还是达人，都能在这里找到合作机会</p>
+            <a href="/login.html?tab=register" class="btn btn-lg">免费注册</a>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <p>© 2024 探店达人营销平台 All Rights Reserved</p>
+        </div>
+    </footer>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        // 加载精选案例
+        async function loadShowcase() {
+            try {
+                const res = await get('/showcase/featured', { limit: 4 });
+                if (res.code === 0 && res.data.length > 0) {
+                    renderShowcase(res.data);
+                } else {
+                    // 显示占位内容
+                    renderPlaceholder();
+                }
+            } catch (err) {
+                renderPlaceholder();
+            }
+        }
+
+        function renderShowcase(items) {
+            const container = document.getElementById('showcaseList');
+            container.innerHTML = items.map(item => `
+                <div class="showcase-item">
+                    <img src="${item.cover_image || '/assets/images/placeholder.jpg'}" alt="${item.title}" class="showcase-cover">
+                    <div class="showcase-info">
+                        <div class="showcase-title">${item.title}</div>
+                        <div class="showcase-meta">
+                            <span class="showcase-author">
+                                <img src="${item.influencer_avatar || '/assets/images/avatar.png'}" alt="">
+                                ${item.influencer_name}
+                            </span>
+                            <span>👁 ${formatNumber(item.view_count)}</span>
+                            <span>❤️ ${formatNumber(item.like_count)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderPlaceholder() {
+            const container = document.getElementById('showcaseList');
+            const placeholders = [
+                { title: '网红火锅店探店', author: '美食达人小王', views: 12500, likes: 890, icon: '🍲', color: '#ff6b35' },
+                { title: '新开咖啡馆打卡', author: '生活博主小李', views: 8900, likes: 560, icon: '☕', color: '#8b5a2b' },
+                { title: '日料店深度测评', author: '吃货小张', views: 15600, likes: 1200, icon: '🍣', color: '#e74c3c' },
+                { title: '甜品店探店vlog', author: '甜品控小美', views: 9800, likes: 780, icon: '🍰', color: '#ff69b4' },
+            ];
+
+            container.innerHTML = placeholders.map(item => `
+                <div class="showcase-item">
+                    <div class="showcase-cover" style="background: linear-gradient(135deg, ${item.color}22 0%, ${item.color}44 100%); display: flex; align-items: center; justify-content: center; font-size: 64px;">
+                        ${item.icon}
+                    </div>
+                    <div class="showcase-info">
+                        <div class="showcase-title">${item.title}</div>
+                        <div class="showcase-meta">
+                            <span class="showcase-author">
+                                <span style="width:20px;height:20px;background:linear-gradient(135deg, ${item.color}, ${item.color}99);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;">${item.icon}</span>
+                                ${item.author}
+                            </span>
+                            <span>👁 ${formatNumber(item.views)}</span>
+                            <span>❤️ ${formatNumber(item.likes)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        loadShowcase();
+    </script>
+</body>
+</html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - 探店达人营销平台</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/admin/assets/css/admin.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- 遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/admin/index.html" class="sidebar-logo">🔐 管理后台</a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/admin/index.html" class="nav-item active">
+                    <span class="nav-icon">📊</span>
+                    <span>数据看板</span>
+                </a>
+                <div class="nav-group">
+                    <div class="nav-group-title">用户管理</div>
+                    <a href="/admin/merchants.html" class="nav-item">
+                        <span class="nav-icon">🏪</span>
+                        <span>商家管理</span>
+                    </a>
+                    <a href="/admin/influencers.html" class="nav-item">
+                        <span class="nav-icon">🎬</span>
+                        <span>达人管理</span>
+                    </a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">内容管理</div>
+                    <a href="/admin/tasks.html" class="nav-item">
+                        <span class="nav-icon">📋</span>
+                        <span>任务审核</span>
+                    </a>
+                    <a href="/admin/works.html" class="nav-item">
+                        <span class="nav-icon">🎨</span>
+                        <span>作品审核</span>
+                    </a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">财务管理</div>
+                    <a href="/admin/withdrawals.html" class="nav-item">
+                        <span class="nav-icon">💳</span>
+                        <span>提现审核</span>
+                    </a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">系统设置</div>
+                    <a href="/admin/categories.html" class="nav-item">
+                        <span class="nav-icon">📁</span>
+                        <span>分类管理</span>
+                    </a>
+                    <a href="/admin/settings.html" class="nav-item">
+                        <span class="nav-icon">⚙️</span>
+                        <span>系统配置</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="page-title">数据看板</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-dropdown">
+                        <div class="user-info" onclick="toggleDropdown()">
+                            <div class="user-avatar" id="userAvatar"></div>
+                            <span class="user-name" id="userName">管理员</span>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="javascript:logout()" class="dropdown-item danger">
+                                <span>🚪</span>
+                                <span>退出登录</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <!-- 核心指标 -->
+                <div class="stats-section mb-lg">
+                    <div class="stat-card-enhanced users">
+                        <div class="stat-card-header">
+                            <div class="stat-card-icon">👥</div>
+                            <span class="stat-card-badge">实时</span>
+                        </div>
+                        <div class="stat-card-body">
+                            <div class="stat-card-value-lg" id="statUsers">0</div>
+                            <div class="stat-card-label-lg">总用户数</div>
+                        </div>
+                        <div class="stat-card-footer">
+                            <span>今日新增</span>
+                            <span class="highlight" id="statUsersToday">+0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card-enhanced tasks">
+                        <div class="stat-card-header">
+                            <div class="stat-card-icon">📋</div>
+                            <span class="stat-card-badge">任务</span>
+                        </div>
+                        <div class="stat-card-body">
+                            <div class="stat-card-value-lg" id="statTasks">0</div>
+                            <div class="stat-card-label-lg">总任务数</div>
+                        </div>
+                        <div class="stat-card-footer">
+                            <span>进行中</span>
+                            <span class="success" id="statTasksActive">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card-enhanced orders">
+                        <div class="stat-card-header">
+                            <div class="stat-card-icon">📦</div>
+                            <span class="stat-card-badge">订单</span>
+                        </div>
+                        <div class="stat-card-body">
+                            <div class="stat-card-value-lg" id="statOrders">0</div>
+                            <div class="stat-card-label-lg">总订单数</div>
+                        </div>
+                        <div class="stat-card-footer">
+                            <span>已完成</span>
+                            <span class="success" id="statOrdersCompleted">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card-enhanced revenue">
+                        <div class="stat-card-header">
+                            <div class="stat-card-icon">💰</div>
+                            <span class="stat-card-badge">收入</span>
+                        </div>
+                        <div class="stat-card-body">
+                            <div class="stat-card-value-lg">¥<span id="statRevenue">0.00</span></div>
+                            <div class="stat-card-label-lg">平台总收入</div>
+                        </div>
+                        <div class="stat-card-footer">
+                            <span>累计服务费</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 待处理事项 -->
+                <div class="pending-section mb-lg">
+                    <div class="pending-section-title">待处理事项</div>
+                    <div class="pending-grid">
+                        <a href="/admin/merchants.html?verify_status=0" class="todo-card merchants">
+                            <div class="todo-icon-wrapper">🏪</div>
+                            <div class="todo-info">
+                                <div class="todo-count" id="pendingMerchants">0</div>
+                                <div class="todo-label">待审核商家</div>
+                            </div>
+                        </a>
+                        <a href="/admin/influencers.html?verify_status=0" class="todo-card influencers">
+                            <div class="todo-icon-wrapper">🎬</div>
+                            <div class="todo-info">
+                                <div class="todo-count" id="pendingInfluencers">0</div>
+                                <div class="todo-label">待审核达人</div>
+                            </div>
+                        </a>
+                        <a href="/admin/tasks.html?status=1" class="todo-card tasks">
+                            <div class="todo-icon-wrapper">📋</div>
+                            <div class="todo-info">
+                                <div class="todo-count" id="pendingTasks">0</div>
+                                <div class="todo-label">待审核任务</div>
+                            </div>
+                        </a>
+                        <a href="/admin/works.html?status=0" class="todo-card works">
+                            <div class="todo-icon-wrapper">🎨</div>
+                            <div class="todo-info">
+                                <div class="todo-count" id="pendingWorks">0</div>
+                                <div class="todo-label">待审核作品</div>
+                            </div>
+                        </a>
+                        <a href="/admin/withdrawals.html?status=0" class="todo-card withdrawals">
+                            <div class="todo-icon-wrapper">💳</div>
+                            <div class="todo-info">
+                                <div class="todo-count" id="pendingWithdrawals">0</div>
+                                <div class="todo-label">待处理提现</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 用户分布和财务概览 -->
+                <div class="dashboard-bottom-row mb-lg">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">用户分布</h3>
+                        </div>
+                        <div class="user-distribution">
+                            <div class="user-stat-card merchant">
+                                <div class="user-stat-icon">🏪</div>
+                                <div class="user-stat-info">
+                                    <div class="user-stat-value" id="merchantCount">0</div>
+                                    <div class="user-stat-label">商家数量</div>
+                                </div>
+                                <div class="user-stat-percent" id="merchantPercent">0%</div>
+                            </div>
+                            <div class="user-stat-card influencer">
+                                <div class="user-stat-icon">🎬</div>
+                                <div class="user-stat-info">
+                                    <div class="user-stat-value" id="influencerCount">0</div>
+                                    <div class="user-stat-label">达人数量</div>
+                                </div>
+                                <div class="user-stat-percent" id="influencerPercent">0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">财务概览</h3>
+                        </div>
+                        <div class="finance-overview">
+                            <div class="finance-item">
+                                <span class="finance-label">总充值</span>
+                                <span class="finance-value" id="totalRecharge">¥0.00</span>
+                            </div>
+                            <div class="finance-item">
+                                <span class="finance-label">总消费</span>
+                                <span class="finance-value" id="totalConsume">¥0.00</span>
+                            </div>
+                            <div class="finance-item">
+                                <span class="finance-label">总结算</span>
+                                <span class="finance-value" id="totalSettle">¥0.00</span>
+                            </div>
+                            <div class="finance-item">
+                                <span class="finance-label">总提现</span>
+                                <span class="finance-value" id="totalWithdraw">¥0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        // 检查管理员权限
+        const user = getUser();
+        if (!user || user.user_type != 3) {
+            window.location.href = '/admin/login.html';
+        }
+
+        // 下拉菜单切换
+        function toggleDropdown() {
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-dropdown')) {
+                document.getElementById('dropdownMenu').classList.remove('show');
+            }
+        });
+
+        // 加载用户信息
+        function loadUserInfo() {
+            if (user) {
+                document.getElementById('userName').textContent = user.username;
+                setUserAvatar(document.getElementById('userAvatar'), user.avatar);
+            }
+        }
+
+        loadUserInfo();
+
+        // 加载数据看板
+        async function loadDashboard() {
+            try {
+                const res = await get('/admin/dashboard');
+                if (res.code === 0) {
+                    const { users, tasks, orders, finance } = res.data;
+
+                    // 用户统计
+                    document.getElementById('statUsers').textContent = users?.total || 0;
+                    document.getElementById('statUsersToday').textContent = '+' + (users?.today_new || 0);
+                    document.getElementById('merchantCount').textContent = users?.merchants || 0;
+                    document.getElementById('influencerCount').textContent = users?.influencers || 0;
+
+                    // 用户分布百分比
+                    const total = (users?.merchants || 0) + (users?.influencers || 0);
+                    if (total > 0) {
+                        const merchantPct = Math.round((users?.merchants || 0) / total * 100);
+                        const influencerPct = 100 - merchantPct;
+                        document.getElementById('merchantPercent').textContent = merchantPct + '%';
+                        document.getElementById('influencerPercent').textContent = influencerPct + '%';
+                    }
+
+                    // 任务统计
+                    document.getElementById('statTasks').textContent = tasks?.total || 0;
+                    document.getElementById('statTasksActive').textContent = tasks?.active || 0;
+
+                    // 订单统计
+                    document.getElementById('statOrders').textContent = orders?.total || 0;
+                    document.getElementById('statOrdersCompleted').textContent = orders?.completed || 0;
+
+                    // 财务统计
+                    document.getElementById('statRevenue').textContent = formatMoney(finance?.total_platform_fee || 0);
+                    document.getElementById('totalRecharge').textContent = '¥' + formatMoney(finance?.total_recharge || 0);
+                    document.getElementById('totalConsume').textContent = '¥' + formatMoney(finance?.total_consume || 0);
+                    document.getElementById('totalSettle').textContent = '¥' + formatMoney(finance?.total_settle || 0);
+                    document.getElementById('totalWithdraw').textContent = '¥' + formatMoney(finance?.total_withdraw || 0);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // 加载待处理数量
+        async function loadPendingCounts() {
+            try {
+                // 待审核商家
+                const merchantRes = await get('/admin/merchants', { verify_status: 0, per_page: 1 });
+                if (merchantRes.code === 0) {
+                    document.getElementById('pendingMerchants').textContent = merchantRes.data.pagination.total;
+                }
+
+                // 待审核达人
+                const influencerRes = await get('/admin/influencers', { verify_status: 0, per_page: 1 });
+                if (influencerRes.code === 0) {
+                    document.getElementById('pendingInfluencers').textContent = influencerRes.data.pagination.total;
+                }
+
+                // 待审核任务 (status=1 是待审核)
+                const taskRes = await get('/admin/tasks', { status: 1, per_page: 1 });
+                if (taskRes.code === 0) {
+                    document.getElementById('pendingTasks').textContent = taskRes.data.pagination.total;
+                }
+
+                // 待审核作品
+                const workRes = await get('/admin/works', { status: 0, per_page: 1 });
+                if (workRes.code === 0) {
+                    document.getElementById('pendingWorks').textContent = workRes.data.pagination.total;
+                }
+
+                // 待处理提现
+                const withdrawRes = await get('/admin/withdrawals', { status: 0, per_page: 1 });
+                if (withdrawRes.code === 0) {
+                    document.getElementById('pendingWithdrawals').textContent = withdrawRes.data.pagination.total;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        loadDashboard();
+        loadPendingCounts();
+
+        // 侧边栏切换
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

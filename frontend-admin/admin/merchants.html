@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商家管理 - 管理后台</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/admin/assets/css/admin.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- 遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/admin/index.html" class="sidebar-logo">🔐 管理后台</a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/admin/index.html" class="nav-item"><span class="nav-icon">📊</span><span>数据看板</span></a>
+                <div class="nav-group">
+                    <div class="nav-group-title">用户管理</div>
+                    <a href="/admin/merchants.html" class="nav-item active"><span class="nav-icon">🏪</span><span>商家管理</span></a>
+                    <a href="/admin/influencers.html" class="nav-item"><span class="nav-icon">🎬</span><span>达人管理</span></a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">内容管理</div>
+                    <a href="/admin/tasks.html" class="nav-item"><span class="nav-icon">📋</span><span>任务审核</span></a>
+                    <a href="/admin/works.html" class="nav-item"><span class="nav-icon">🎨</span><span>作品审核</span></a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">财务管理</div>
+                    <a href="/admin/withdrawals.html" class="nav-item"><span class="nav-icon">💳</span><span>提现审核</span></a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">系统设置</div>
+                    <a href="/admin/categories.html" class="nav-item"><span class="nav-icon">📁</span><span>分类管理</span></a>
+                    <a href="/admin/settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span>系统配置</span></a>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="page-title">商家管理</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-dropdown">
+                        <div class="user-info" onclick="toggleDropdown()">
+                            <div class="user-avatar" id="userAvatar"></div>
+                            <span class="user-name" id="userName">管理员</span>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="javascript:logout()" class="dropdown-item danger"><span>🚪</span><span>退出登录</span></a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <div class="filter-bar" style="background:white;padding:var(--spacing-md);border-radius:var(--radius-lg);margin-bottom:var(--spacing-md);">
+                    <select class="form-control" style="width:150px;" id="filterStatus">
+                        <option value="">全部状态</option>
+                        <option value="0">待审核</option>
+                        <option value="1">已通过</option>
+                        <option value="2">已拒绝</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="loadMerchants()">搜索</button>
+                </div>
+
+                <div class="card">
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>用户名</th>
+                                    <th>店铺名称</th>
+                                    <th>联系人</th>
+                                    <th>联系电话</th>
+                                    <th>审核状态</th>
+                                    <th>注册时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="merchantList">
+                                <tr><td colspan="8" class="text-center text-secondary">加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="pagination"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        const user = getUser();
+        if (!user || user.user_type != 3) window.location.href = '/admin/login.html';
+
+        function toggleDropdown() { document.getElementById('dropdownMenu').classList.toggle('show'); }
+        document.addEventListener('click', e => { if (!e.target.closest('.user-dropdown')) document.getElementById('dropdownMenu').classList.remove('show'); });
+
+        function loadUserInfo() {
+            if (user) {
+                document.getElementById('userName').textContent = user.username;
+                setUserAvatar(document.getElementById('userAvatar'), user.avatar);
+            }
+        }
+
+        let currentPage = 1;
+
+        async function loadMerchants(page = 1) {
+            currentPage = page;
+            const status = document.getElementById('filterStatus').value;
+            try {
+                const res = await get('/admin/merchants', { page, verify_status: status || undefined });
+                if (res.code === 0) {
+                    renderMerchants(res.data.items);
+                    renderPagination(document.getElementById('pagination'), res.data.pagination, loadMerchants);
+                }
+            } catch (err) { showToast('加载失败', 'error'); }
+        }
+
+        function renderMerchants(merchants) {
+            const tbody = document.getElementById('merchantList');
+            if (!merchants.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-secondary">暂无数据</td></tr>';
+                return;
+            }
+            tbody.innerHTML = merchants.map(m => `
+                <tr>
+                    <td>${m.id}</td>
+                    <td>${m.username}</td>
+                    <td>${m.shop_name || '-'}</td>
+                    <td>${m.contact_name || '-'}</td>
+                    <td>${m.contact_phone || '-'}</td>
+                    <td>${getStatusTag(m.verify_status, 'verify')}</td>
+                    <td>${formatDate(m.created_at)}</td>
+                    <td>
+                        ${m.verify_status == 0 ? `
+                            <button class="btn btn-success btn-sm" onclick="approve(${m.id})">通过</button>
+                            <button class="btn btn-danger btn-sm" onclick="reject(${m.id})">拒绝</button>
+                        ` : '-'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function approve(id) {
+            if (!await confirm('确定通过该商家的审核吗？')) return;
+            try {
+                const res = await post(`/admin/merchants/${id}/verify`, { status: 1 });
+                if (res.code === 0) { showToast('审核通过'); loadMerchants(currentPage); }
+                else showToast(res.message, 'error');
+            } catch (err) { showToast('操作失败', 'error'); }
+        }
+
+        async function reject(id) {
+            if (!await confirm('确定拒绝该商家的审核吗？')) return;
+            try {
+                const res = await post(`/admin/merchants/${id}/verify`, { status: 2 });
+                if (res.code === 0) { showToast('已拒绝'); loadMerchants(currentPage); }
+                else showToast(res.message, 'error');
+            } catch (err) { showToast('操作失败', 'error'); }
+        }
+
+        loadUserInfo();
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('verify_status')) document.getElementById('filterStatus').value = urlParams.get('verify_status');
+        loadMerchants();
+
+        // 侧边栏切换
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+# ==========================================
+# 探店达人营销平台 - Git 忽略文件
+# ==========================================
+
+# ==================== 操作系统 ====================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ==================== IDE/编辑器 ====================
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+.project
+.settings/
+.classpath
+*.iml
+
+# ==================== 后端 (PHP) ====================
+# Composer
+backend/vendor/
+composer.lock
+
+# 日志文件
+backend/storage/logs/*.log
+backend/storage/logs/*
+!backend/storage/logs/.gitkeep
+
+# 上传文件
+backend/storage/uploads/*
+!backend/storage/uploads/.gitkeep
+
+# 环境配置
+backend/.env
+backend/.env.local
+backend/.env.*.local
+
+# PHP 缓存
+*.cache
+*.log
+
+# ==================== 前端 ====================
+# Node.js
+frontend-admin/node_modules/
+frontend-admin/dist/
+frontend-admin/.cache/
+frontend-admin/.parcel-cache/
+
+# 构建产物
+frontend-admin/build/
+*.map
+
+# 环境配置
+frontend-admin/.env
+frontend-admin/.env.local
+frontend-admin/.env.*.local
+
+# ==================== Docker ====================
+# Docker 数据卷（本地开发）
+docker-data/
+mysql-data/
+
+# Docker 环境文件
+.env.docker
+docker-compose.override.yml
+
+# ==================== 测试 ====================
+coverage/
+.nyc_output/
+*.test.js.snap
+
+# ==================== 其他 ====================
+# 临时文件
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# 压缩文件
+*.zip
+*.tar.gz
+*.rar
+
+# 敏感信息
+*.pem
+*.key
+*.crt
+secrets/
+credentials/
+
+# 文档生成
+docs/api/
+docs/generated/

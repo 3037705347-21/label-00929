@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统配置 - 管理后台</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/admin/assets/css/admin.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- 遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/admin/index.html" class="sidebar-logo">🔐 管理后台</a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/admin/index.html" class="nav-item"><span class="nav-icon">📊</span><span>数据看板</span></a>
+                <div class="nav-group">
+                    <div class="nav-group-title">用户管理</div>
+                    <a href="/admin/merchants.html" class="nav-item"><span class="nav-icon">🏪</span><span>商家管理</span></a>
+                    <a href="/admin/influencers.html" class="nav-item"><span class="nav-icon">🎬</span><span>达人管理</span></a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">内容管理</div>
+                    <a href="/admin/tasks.html" class="nav-item"><span class="nav-icon">📋</span><span>任务审核</span></a>
+                    <a href="/admin/works.html" class="nav-item"><span class="nav-icon">🎨</span><span>作品审核</span></a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">财务管理</div>
+                    <a href="/admin/withdrawals.html" class="nav-item"><span class="nav-icon">💳</span><span>提现审核</span></a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">系统设置</div>
+                    <a href="/admin/categories.html" class="nav-item"><span class="nav-icon">📁</span><span>分类管理</span></a>
+                    <a href="/admin/settings.html" class="nav-item active"><span class="nav-icon">⚙️</span><span>系统配置</span></a>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="page-title">系统配置</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-dropdown">
+                        <div class="user-info" onclick="toggleDropdown()">
+                            <div class="user-avatar" id="userAvatar"></div>
+                            <span class="user-name" id="userName">管理员</span>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="javascript:logout()" class="dropdown-item danger"><span>🚪</span><span>退出登录</span></a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <div class="grid grid-2">
+                    <!-- 平台费用设置 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">💰 平台费用设置</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">平台服务费率（%）</label>
+                                <input type="number" class="form-control" id="platform_fee_rate" step="0.1" min="0" max="100">
+                                <div class="form-hint">商家支付给达人的佣金中，平台抽取的比例</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">CPS分成比例（%）</label>
+                                <input type="number" class="form-control" id="cps_rate" step="0.1" min="0" max="100">
+                                <div class="form-hint">CPS模式下，达人获得的销售额分成比例</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 提现设置 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">💳 提现设置</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">最低提现金额（元）</label>
+                                <input type="number" class="form-control" id="min_withdraw_amount" step="1" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">单次最高提现金额（元）</label>
+                                <input type="number" class="form-control" id="max_withdraw_amount" step="1" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">提现手续费率（%）</label>
+                                <input type="number" class="form-control" id="withdraw_fee_rate" step="0.1" min="0" max="100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 任务设置 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">📋 任务设置</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">任务最低佣金（元）</label>
+                                <input type="number" class="form-control" id="min_task_commission" step="1" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">任务最低预算（元）</label>
+                                <input type="number" class="form-control" id="min_task_budget" step="1" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">任务自动关闭天数</label>
+                                <input type="number" class="form-control" id="task_auto_close_days" step="1" min="1">
+                                <div class="form-hint">任务超过有效期后自动关闭的天数</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 达人认证设置 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">🎬 达人认证设置</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">最低粉丝数要求</label>
+                                <input type="number" class="form-control" id="min_followers_count" step="1" min="0">
+                                <div class="form-hint">达人认证需要的最低粉丝数</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">支持的内容平台</label>
+                                <input type="text" class="form-control" id="supported_platforms" placeholder="抖音,小红书,快手,微博">
+                                <div class="form-hint">多个平台用逗号分隔</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-lg" style="text-align:center;">
+                    <button class="btn btn-primary btn-lg" onclick="saveConfigs()">保存配置</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        const user = getUser();
+        if (!user || user.user_type != 3) window.location.href = '/admin/login.html';
+
+        function toggleDropdown() { document.getElementById('dropdownMenu').classList.toggle('show'); }
+        document.addEventListener('click', e => { if (!e.target.closest('.user-dropdown')) document.getElementById('dropdownMenu').classList.remove('show'); });
+
+        function loadUserInfo() {
+            if (user) {
+                document.getElementById('userName').textContent = user.username;
+                setUserAvatar(document.getElementById('userAvatar'), user.avatar);
+            }
+        }
+
+        // 配置项列表
+        const configKeys = [
+            'platform_fee_rate',
+            'cps_rate',
+            'min_withdraw_amount',
+            'max_withdraw_amount',
+            'withdraw_fee_rate',
+            'min_task_commission',
+            'min_task_budget',
+            'task_auto_close_days',
+            'min_followers_count',
+            'supported_platforms'
+        ];
+
+        // 默认值
+        const defaultValues = {
+            platform_fee_rate: 10,
+            cps_rate: 10,
+            min_withdraw_amount: 100,
+            max_withdraw_amount: 50000,
+            withdraw_fee_rate: 0.5,
+            min_task_commission: 50,
+            min_task_budget: 500,
+            task_auto_close_days: 7,
+            min_followers_count: 1000,
+            supported_platforms: '抖音,小红书,快手,微博'
+        };
+
+        async function loadConfigs() {
+            try {
+                const res = await get('/admin/configs');
+                if (res.code === 0) {
+                    const configs = res.data;
+                    configKeys.forEach(key => {
+                        const el = document.getElementById(key);
+                        if (el) {
+                            // 后端返回的格式是 {key: {value: xxx, type: xxx}}
+                            let val = configs[key];
+                            if (val && typeof val === 'object' && val.value !== undefined) {
+                                val = val.value;
+                            }
+                            // 确保值不是对象，如果是对象或数组则转为字符串
+                            if (val !== null && typeof val === 'object') {
+                                if (Array.isArray(val)) {
+                                    val = val.join(',');
+                                } else {
+                                    // 尝试提取value字段，否则转为JSON字符串
+                                    val = val.value !== undefined ? val.value : '';
+                                }
+                            }
+                            el.value = val !== undefined && val !== null && val !== '' ? val : defaultValues[key];
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('加载配置失败:', err);
+                // 使用默认值
+                configKeys.forEach(key => {
+                    const el = document.getElementById(key);
+                    if (el) el.value = defaultValues[key];
+                });
+            }
+        }
+
+        async function saveConfigs() {
+            const configs = {};
+            configKeys.forEach(key => {
+                const el = document.getElementById(key);
+                if (el) configs[key] = el.value;
+            });
+
+            try {
+                const res = await put('/admin/configs', configs);
+                if (res.code === 0) {
+                    showToast('配置保存成功');
+                } else {
+                    showToast(res.message, 'error');
+                }
+            } catch (err) { showToast('保存失败', 'error'); }
+        }
+
+        loadUserInfo();
+        loadConfigs();
+
+        // 侧边栏切换
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

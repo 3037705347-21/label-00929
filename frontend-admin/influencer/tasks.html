@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务大厅 - 达人中心</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/influencer/assets/css/influencer.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- 遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/influencer/index.html" class="sidebar-logo">🔥 探店达人</a>
+                <span class="sidebar-badge">达人版</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/influencer/index.html" class="nav-item">
+                    <span class="nav-icon">🏠</span>
+                    <span>首页</span>
+                </a>
+                <a href="/influencer/tasks.html" class="nav-item active">
+                    <span class="nav-icon">📋</span>
+                    <span>任务大厅</span>
+                </a>
+                <a href="/influencer/orders.html" class="nav-item">
+                    <span class="nav-icon">📦</span>
+                    <span>我的订单</span>
+                </a>
+                <a href="/influencer/wallet.html" class="nav-item">
+                    <span class="nav-icon">💰</span>
+                    <span>收益中心</span>
+                </a>
+                <a href="/influencer/profile.html" class="nav-item">
+                    <span class="nav-icon">👤</span>
+                    <span>个人资料</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="page-title">任务大厅</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-dropdown">
+                        <div class="user-info" onclick="toggleDropdown()">
+                            <div class="user-avatar" id="userAvatar"></div>
+                            <span class="user-name" id="userName">达人</span>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="javascript:logout()" class="dropdown-item danger">
+                                <span>🚪</span>
+                                <span>退出登录</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <!-- 推荐任务（定向派单） -->
+                <div class="card mb-md" id="recommendedSection" style="display: none;">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #E8EDF3;">
+                        <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1A1A1A;">
+                            <span style="margin-right: 8px;">🎯</span>为你推荐
+                        </h3>
+                        <span class="text-secondary text-sm">基于您的资料智能匹配</span>
+                    </div>
+                    <div id="recommendedList" style="padding: 16px;">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 筛选 -->
+                <div class="card mb-md" style="padding: 16px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                        <select class="form-control" id="filterCity" style="width: 120px; flex: none;">
+                            <option value="">全部城市</option>
+                            <option value="北京">北京</option>
+                            <option value="上海">上海</option>
+                            <option value="广州">广州</option>
+                            <option value="深圳">深圳</option>
+                            <option value="杭州">杭州</option>
+                            <option value="成都">成都</option>
+                            <option value="重庆">重庆</option>
+                            <option value="武汉">武汉</option>
+                            <option value="西安">西安</option>
+                            <option value="南京">南京</option>
+                            <option value="苏州">苏州</option>
+                            <option value="天津">天津</option>
+                            <option value="长沙">长沙</option>
+                            <option value="郑州">郑州</option>
+                            <option value="东莞">东莞</option>
+                            <option value="青岛">青岛</option>
+                            <option value="沈阳">沈阳</option>
+                            <option value="宁波">宁波</option>
+                            <option value="昆明">昆明</option>
+                            <option value="厦门">厦门</option>
+                        </select>
+                        <select class="form-control" id="filterTaskType" style="width: 120px; flex: none;">
+                            <option value="">全部类型</option>
+                            <option value="1">云探店</option>
+                            <option value="2">到店实探</option>
+                        </select>
+                        <select class="form-control" id="filterCommission" style="width: 120px; flex: none;">
+                            <option value="">不限佣金</option>
+                            <option value="0-100">100元以下</option>
+                            <option value="100-300">100-300元</option>
+                            <option value="300-500">300-500元</option>
+                            <option value="500-1000">500-1000元</option>
+                            <option value="1000-0">1000元以上</option>
+                        </select>
+                        <input type="text" class="form-control" id="filterKeyword" placeholder="搜索商家品牌/任务名称" style="width: 200px; flex: none;">
+                        <button class="btn btn-primary" onclick="loadTasks()">搜索</button>
+                        <button class="btn btn-secondary" onclick="resetFilters()">重置</button>
+                    </div>
+                    <!-- 当前筛选条件标签 -->
+                    <div class="active-filters" id="activeFilters" style="display: none; margin-top: 12px;">
+                        <span class="active-filters-label">当前筛选：</span>
+                        <div class="active-filters-tags" id="activeFiltersTags"></div>
+                        <button class="btn btn-text btn-sm" onclick="resetFilters()">清除全部</button>
+                    </div>
+                </div>
+
+                <!-- 任务列表 -->
+                <div id="taskList">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+
+                <!-- 分页 -->
+                <div class="pagination" id="pagination"></div>
+
+                <!-- 任务详情弹窗 -->
+                <div class="modal-overlay" id="taskModal">
+                    <div class="modal" style="max-width: 600px;">
+                        <div class="modal-header">
+                            <h3 class="modal-title">任务详情</h3>
+                            <button class="modal-close" onclick="closeTaskModal()">&times;</button>
+                        </div>
+                        <div class="modal-body" id="taskDetail">
+                            <!-- 动态内容 -->
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" onclick="closeTaskModal()">关闭</button>
+                            <button class="btn btn-primary" id="applyBtn" onclick="applyTask()">立即报名</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/assets/js/common.js"></script>
+    <script>
+        let currentPage = 1;
+        let currentTaskId = null;
+
+        // 重置筛选
+        function resetFilters() {
+            document.getElementById('filterCity').value = '';
+            document.getElementById('filterTaskType').value = '';
+            document.getElementById('filterCommission').value = '';
+            document.getElementById('filterKeyword').value = '';
+            updateActiveFilters();
+            loadTasks();
+        }
+
+        // 更新当前筛选条件显示
+        function updateActiveFilters() {
+            const filters = [];
+            
+            const city = document.getElementById('filterCity');
+            if (city.value) {
+                filters.push({ key: 'city', label: '城市', value: city.options[city.selectedIndex].text });
+            }
+            
+            const taskType = document.getElementById('filterTaskType');
+            if (taskType.value) {
+                filters.push({ key: 'taskType', label: '类型', value: taskType.options[taskType.selectedIndex].text });
+            }
+            
+            const commission = document.getElementById('filterCommission');
+            if (commission.value) {
+                filters.push({ key: 'commission', label: '佣金', value: commission.options[commission.selectedIndex].text });
+            }
+            
+            const keyword = document.getElementById('filterKeyword').value;
+            if (keyword) {
+                filters.push({ key: 'keyword', label: '关键词', value: keyword });
+            }
+            
+            const container = document.getElementById('activeFilters');
+            const tagsContainer = document.getElementById('activeFiltersTags');
+            
+            if (filters.length > 0) {
+                container.style.display = 'flex';
+                tagsContainer.innerHTML = filters.map(f => `
+                    <span class="filter-tag">
+                        <span class="filter-tag-label">${f.label}:</span>
+                        <span class="filter-tag-value">${f.value}</span>
+                        <button class="filter-tag-remove" onclick="removeFilter('${f.key}')">&times;</button>
+                    </span>
+                `).join('');
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        // 移除单个筛选条件
+        function removeFilter(key) {
+            const mapping = {
+                'city': 'filterCity',
+                'taskType': 'filterTaskType',
+                'commission': 'filterCommission',
+                'keyword': 'filterKeyword'
+            };
+            
+            const elementId = mapping[key];
+            if (elementId) {
+                document.getElementById(elementId).value = '';
+                updateActiveFilters();
+                loadTasks();
+            }
+        }
+
+        // 加载推荐任务（定向派单）
+        async function loadRecommendedTasks() {
+            try {
+                const res = await get('/influencer/tasks/recommended', { limit: 6 });
+                if (res.code === 0 && res.data.items && res.data.items.length > 0) {
+                    document.getElementById('recommendedSection').style.display = 'block';
+                    renderRecommendedTasks(res.data.items);
+                } else {
+                    document.getElementById('recommendedSection').style.display = 'none';
+                }
+            } catch (err) {
+                console.error('加载推荐任务失败', err);
+                document.getElementById('recommendedSection').style.display = 'none';
+            }
+        }
+
+        function renderRecommendedTasks(tasks) {
+            const container = document.getElementById('recommendedList');
+            container.innerHTML = `
+                <div class="recommended-task-list">
+                    ${tasks.map(task => `
+                        <div class="recommended-task-item" onclick="showTaskDetail(${task.id})">
+                            <div class="recommended-task-badge">
+                                <span class="match-score">${task.match_score}分匹配</span>
+                            </div>
+                            <div class="recommended-task-cover">
+                                ${task.task_type == 1 ? '☁️' : '🏪'}
+                            </div>
+                            <div class="recommended-task-content">
+                                <h4 class="recommended-task-title">${task.title}</h4>
+                                <div class="recommended-task-shop">${task.shop_name}</div>
+                                <div class="recommended-task-commission">
+                                    ${task.commission_type == 1 ? '¥' + formatMoney(task.commission_amount) : task.cps_rate + '%分成'}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // 加载任务列表
+        async function loadTasks(page = 1) {
+            currentPage = page;
+
+            // 解析佣金范围
+            const commissionRange = document.getElementById('filterCommission').value;
+            let minCommission, maxCommission;
+            if (commissionRange) {
+                const [min, max] = commissionRange.split('-');
+                minCommission = min !== '0' ? min : undefined;
+                maxCommission = max !== '0' ? max : undefined;
+            }
+
+            const params = {
+                page,
+                city: document.getElementById('filterCity').value || undefined,
+                task_type: document.getElementById('filterTaskType').value || undefined,
+                min_commission: minCommission,
+                max_commission: maxCommission,
+                keyword: document.getElementById('filterKeyword').value || undefined,
+            };
+
+            // 更新筛选条件显示
+            updateActiveFilters();
+
+            try {
+                const res = await get('/influencer/tasks', params);
+                if (res.code === 0) {
+                    renderTasks(res.data.items);
+                    renderPagination(document.getElementById('pagination'), res.data.pagination, loadTasks);
+                }
+            } catch (err) {
+                showToast('加载失败', 'error');
+            }
+        }
+
+        function renderTasks(tasks) {
+            const container = document.getElementById('taskList');
+
+            if (tasks.length === 0) {
+                const cityFilter = document.getElementById('filterCity').value;
+                const hint = cityFilter ? `<p class="text-secondary text-sm" style="margin-top: 8px;">提示：当前筛选城市"${cityFilter}"暂无任务，请尝试其他城市或清除筛选条件</p>` : '';
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <p class="empty-state-text">暂无符合条件的任务</p>
+                        ${hint}
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="task-hall-list">
+                    ${tasks.map(task => `
+                        <div class="task-hall-item" onclick="showTaskDetail(${task.id})">
+                            <div class="task-hall-cover" style="background: linear-gradient(135deg, #FFF4F0 0%, #FFE4D6 100%);">
+                                ${task.task_type == 1 ? '☁️' : '🏪'}
+                            </div>
+                            <div class="task-hall-content">
+                                <h3 class="task-hall-title">${task.title}</h3>
+                                <div class="task-hall-shop">
+                                    ${task.shop_logo
+                                        ? `<img src="${task.shop_logo}" alt="">`
+                                        : `<span style="width:18px;height:18px;background:#E8EDF3;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;">🏪</span>`}
+                                    <span>${task.shop_name}</span>
+                                </div>
+                                <div class="task-hall-tags">
+                                    <span class="tag tag-sm">${task.task_type == 1 ? '云探店' : '到店实探'}</span>
+                                    <span class="tag tag-sm" style="background: #EEF2FF; color: #4F46E5;">📍 ${task.city || '全国'}</span>
+                                </div>
+                                <div class="task-hall-meta">
+                                    <span class="task-hall-commission">
+                                        ${task.commission_type == 1 ? '¥' + formatMoney(task.commission_amount) : task.cps_rate + '%分成'}
+                                    </span>
+                                    <span class="text-secondary text-sm">剩余${task.max_influencers - task.accepted_count}名额</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // 显示任务详情
+        async function showTaskDetail(id) {
+            currentTaskId = id;
+
+            try {
+                const res = await get(`/influencer/tasks/${id}`);
+                if (res.code === 0) {
+                    const task = res.data;
+
+                    document.getElementById('taskDetail').innerHTML = `
+                        <div class="task-detail-header">
+                            <h2 class="task-detail-title">${task.title}</h2>
+                            <div class="task-detail-shop">
+                                ${task.shop_logo
+                                    ? `<img src="${task.shop_logo}" alt="">`
+                                    : `<span class="shop-avatar">🏪</span>`}
+                                <span>${task.shop_name}</span>
+                                <span class="dot">·</span>
+                                <span>${task.city || '全国'}</span>
+                            </div>
+                        </div>
+
+                        <div class="task-detail-stats">
+                            <div class="task-stat-item primary">
+                                <div class="task-stat-value">${task.commission_type == 1 ? '¥' + formatMoney(task.commission_amount) : task.cps_rate + '%'}</div>
+                                <div class="task-stat-label">${task.commission_type == 1 ? '固定佣金' : 'CPS分成'}</div>
+                            </div>
+                            <div class="task-stat-item">
+                                <div class="task-stat-value">${task.max_influencers - task.accepted_count}</div>
+                                <div class="task-stat-label">剩余名额</div>
+                            </div>
+                            <div class="task-stat-item">
+                                <div class="task-stat-value">${task.min_followers > 0 ? formatNumber(task.min_followers) : '不限'}</div>
+                                <div class="task-stat-label">最低粉丝</div>
+                            </div>
+                        </div>
+
+                        <div class="task-detail-info">
+                            <div class="info-row">
+                                <span class="info-icon">📅</span>
+                                <span class="info-label">任务周期</span>
+                                <span class="info-value">${formatDate(task.start_date)} ~ ${formatDate(task.end_date)}</span>
+                            </div>
+                            ${task.target_product ? `
+                            <div class="info-row">
+                                <span class="info-icon">🛍️</span>
+                                <span class="info-label">推广商品</span>
+                                <span class="info-value">${task.target_product} ${task.product_price ? '¥' + task.product_price : ''}</span>
+                            </div>
+                            ` : ''}
+                            <div class="info-row">
+                                <span class="info-icon">📱</span>
+                                <span class="info-label">发布平台</span>
+                                <span class="info-value">${task.publish_platform || '-'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-icon">🎬</span>
+                                <span class="info-label">内容形式</span>
+                                <span class="info-value">${task.content_form || '-'}</span>
+                            </div>
+                        </div>
+
+                        <div class="task-detail-section">
+                            <div class="section-title">📋 任务要求</div>
+                            <div class="section-content">${task.requirements || '-'}</div>
+                        </div>
+                    `;
+
+                    // 更新报名按钮状态
+                    const applyBtn = document.getElementById('applyBtn');
+                    if (task.has_applied) {
+                        applyBtn.textContent = '已报名';
+                        applyBtn.disabled = true;
+                    } else {
+                        applyBtn.textContent = '立即报名';
+                        applyBtn.disabled = false;
+                    }
+
+                    document.getElementById('taskModal').classList.add('active');
+                }
+            } catch (err) {
+                showToast('加载失败', 'error');
+            }
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.remove('active');
+            currentTaskId = null;
+        }
+
+        // 报名任务
+        async function applyTask() {
+            if (!currentTaskId) return;
+
+            const btn = document.getElementById('applyBtn');
+            btn.disabled = true;
+            btn.textContent = '报名中...';
+
+            try {
+                const res = await post(`/influencer/tasks/${currentTaskId}/apply`);
+                if (res.code === 0) {
+                    showToast('报名成功，请等待商家审核');
+                    closeTaskModal();
+                    loadTasks(currentPage);
+                } else {
+                    showToast(res.message, 'error');
+                    btn.disabled = false;
+                    btn.textContent = '立即报名';
+                }
+            } catch (err) {
+                showToast('报名失败', 'error');
+                btn.disabled = false;
+                btn.textContent = '立即报名';
+            }
+        }
+
+        // 检查URL参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const taskId = urlParams.get('id');
+        if (taskId) {
+            showTaskDetail(parseInt(taskId));
+        }
+
+        // 初始化
+        loadRecommendedTasks();
+        loadTasks();
+
+        // 侧边栏切换
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+
+        // 下拉菜单切换
+        function toggleDropdown() {
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-dropdown')) {
+                document.getElementById('dropdownMenu').classList.remove('show');
+            }
+        });
+
+        // 加载用户信息
+        async function loadUserInfo() {
+            try {
+                const res = await get('/auth/profile');
+                if (res.code === 0) {
+                    const { user, influencer } = res.data;
+                    document.getElementById('userName').textContent = influencer?.nickname || user?.username || '达人';
+                    setUserAvatar(document.getElementById('userAvatar'), user?.avatar);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        loadUserInfo();
+    </script>
+</body>
+</html>
