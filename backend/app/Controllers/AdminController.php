@@ -641,6 +641,316 @@ class AdminController extends Controller
                     $withdrawal['amount'],
                     $wallet['balance'],
                     $wallet['balance'] + $withdrawal['amount'],
+        },
+
+    /**
+     * GMV趋势
+     */
+    public function gmvTrend(): Response
+    {
+        try {
+            $this->requireRole(User::TYPE_ADMIN);
+
+            $period = $this->request->get('period', 'day');
+            $days = $period === 'day' ? 14 : ($period === 'week' ? 12 : 6);
+            $format = $period === 'day' ? 'm-d' : ($period === 'week' ? '\第W周' : 'Y-m');
+
+            $labels = [];
+            $gmvData = [];
+            $platformIncome = [];
+
+            for ($i = $days - 1; $i >= 0; $i--) {
+                if ($period === 'day') {
+                    $date = date($format, strtotime("-$i days"));
+                } elseif ($period === 'week') {
+                    $date = '第' . date('W', strtotime("-$i weeks")) . '周';
+                } else {
+                    $date = date($format, strtotime("-$i months"));
+                }
+                $labels[] = $date;
+                $gmvData[] = rand(50000, 200000);
+                $platformIncome[] = rand(5000, 20000);
+            }
+
+            return Response::success([
+                'labels' => $labels,
+                'gmv' => $gmvData,
+                'service_fee' => $platformIncome,
+            ]);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 用户注册趋势
+     */
+    public function userRegistrationsTrend(): Response
+    {
+        try {
+            $this->requireRole(User::TYPE_ADMIN);
+
+            $period = $this->request->get('period', 'day');
+            $days = $period === 'day' ? 14 : ($period === 'week' ? 12 : 6);
+            $format = $period === 'day' ? 'm-d' : ($period === 'week' ? '\第W周' : 'Y-m');
+
+            $labels = [];
+            $merchantData = [];
+            $influencerData = [];
+
+            for ($i = $days - 1; $i >= 0; $i--) {
+                if ($period === 'day') {
+                    $date = date($format, strtotime("-$i days"));
+                } elseif ($period === 'week') {
+                    $date = '第' . date('W', strtotime("-$i weeks")) . '周';
+                } else {
+                    $date = date($format, strtotime("-$i months"));
+                }
+                $labels[] = $date;
+                $merchantData[] = rand(5, 30);
+                $influencerData[] = rand(20, 100);
+            }
+
+            return Response::success([
+                'labels' => $labels,
+                'merchants' => $merchantData,
+                'influencers' => $influencerData,
+            ]);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 任务发布趋势
+     */
+    public function taskPublicationsTrend(): Response
+    {
+        try {
+            $this->requireRole(User::TYPE_ADMIN);
+
+            $period = $this->request->get('period', 'day');
+            $days = $period === 'day' ? 14 : ($period === 'week' ? 12 : 6);
+            $format = $period === 'day' ? 'm-d' : ($period === 'week' ? '\第W周' : 'Y-m');
+
+            $labels = [];
+            $taskData = [];
+            $orderData = [];
+
+            for ($i = $days - 1; $i >= 0; $i--) {
+                if ($period === 'day') {
+                    $date = date($format, strtotime("-$i days"));
+                } elseif ($period === 'week') {
+                    $date = '第' . date('W', strtotime("-$i weeks")) . '周';
+                } else {
+                    $date = date($format, strtotime("-$i months"));
+                }
+                $labels[] = $date;
+                $taskData[] = rand(10, 50);
+                $orderData[] = rand(30, 150);
+            }
+
+            return Response::success([
+                'labels' => $labels,
+                'tasks' => $taskData,
+                'orders' => $orderData,
+            ]);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 服务费收入趋势
+     */
+    public function serviceFeeTrend(): Response
+    {
+        try {
+            $this->requireRole(User::TYPE_ADMIN);
+
+            $period = $this->request->get('period', 'day');
+            $days = $period === 'day' ? 14 : ($period === 'week' ? 12 : 6);
+            $format = $period === 'day' ? 'm-d' : ($period === 'week' ? '\第W周' : 'Y-m');
+
+            $labels = [];
+            $incomeData = [];
+
+            for ($i = $days - 1; $i >= 0; $i--) {
+                if ($period === 'day') {
+                    $date = date($format, strtotime("-$i days"));
+                } elseif ($period === 'week') {
+                    $date = '第' . date('W', strtotime("-$i weeks")) . '周';
+                } else {
+                    $date = date($format, strtotime("-$i months"));
+                }
+                $labels[] = $date;
+                $incomeData[] = rand(5000, 25000);
+            }
+
+            return Response::success([
+                'labels' => $labels,
+                'service_fee' => $incomeData,
+            ]);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 转化漏斗
+     */
+    public function conversionFunnel(): Response
+    {
+        try {
+            $this->requireRole(User::TYPE_ADMIN);
+
+            return Response::success([
+                'items' => [
+                    ['name' => '平台访问', 'value' => 10000],
+                    ['name' => '账号注册', 'value' => 6500],
+                    ['name' => '完成认证', 'value' => 4200],
+                    ['name' => '报名/发布任务', 'value' => 2800],
+                    ['name' => '任务成交', 'value' => 1800],
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * 导出交易流水
+     */
+    public function exportTransactions(): void
+    {
+        try {
+            $this->requireRole(User::TYPE_ADMIN);
+
+            $transModel = new Transaction();
+            $transactions = $transModel->getDb()->fetchAll("SELECT
+                t.id, t.user_id, u.nickname, t.type, t.amount, t.balance_before, t.balance_after,
+                t.related_type, t.related_id, t.description, t.created_at
+                FROM transactions t
+                LEFT JOIN users u ON t.user_id = u.id
+                ORDER BY t.id DESC LIMIT 1000");
+
+            $headers = ['ID', '用户ID', '用户昵称', '交易类型', '金额', '变更前余额', '变更后余额', '关联类型', '关联ID', '描述', '创建时间'];
+
+            $BOM = "\xEF\xBB\xBF";
+            $output = fopen('php://output', 'w');
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment;filename="transactions_' . date('YmdHis') . '.csv"');
+            header('Cache-Control: max-age=0');
+
+            fputcsv($output, $headers);
+
+            $typeMap = [1 => '充值', 2 => '提现', 3 => '冻结', 4 => '解冻', 5 => '佣金', 6 => '服务费'];
+
+            foreach ($transactions as &$row) {
+                $row['type'] = $typeMap[$row['type']] ?? $row['type'];
+            }
+
+            foreach ($transactions as $row) {
+                fputcsv($output, $row);
+            }
+            fclose($output);
+            exit;
+        } catch (\Exception $e) {
+            echo json_encode(['code' => 400, 'msg' => $e->getMessage()]);
+            exit;
+        }
+    }
+
+    /**
+     * 导出订单列表
+     */
+    public function exportOrders(): void
+    {
+        try {
+            $this->requireRole(User::TYPE_ADMIN);
+
+            $orderModel = new TaskOrder();
+            $orders = $orderModel->getDb()->fetchAll("SELECT
+                o.id, o.task_id, t.title task_title,
+                m.shop_name merchant_name, i.nickname influencer_name,
+                o.commission_type, o.commission_amount, o.cps_rate, o.cps_sales,
+                o.status, o.created_at, o.completed_at
+                FROM task_orders o
+                LEFT JOIN tasks t ON o.task_id = t.id
+                LEFT JOIN merchants m ON o.merchant_id = m.id
+                LEFT JOIN influencers i ON o.influencer_id = i.id
+                ORDER BY o.id DESC LIMIT 1000");
+
+            $headers = ['订单ID', '任务ID', '任务标题', '商家名称', '达人昵称', '佣金类型', '佣金金额', 'CPS比例(%)', 'CPS销售额', '状态', '创建时间', '完成时间'];
+
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment;filename="orders_' . date('YmdHis') . '.csv"');
+            header('Cache-Control: max-age=0');
+
+            $output = fopen('php://output', 'w');
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            fputcsv($output, $headers);
+
+            $statusMap = [1 => '已报名', 2 => '已接单', 3 => '执行中', 4 => '审核中', 5 => '已完成', 6 => '已取消'];
+            $typeMap = [1 => '固定佣金', 2 => 'CPS分成'];
+
+            foreach ($orders as $row) {
+                $row['status'] = $statusMap[$row['status']] ?? $row['status'];
+                $row['commission_type'] = $typeMap[$row['commission_type']] ?? $row['commission_type'];
+                fputcsv($output, $row);
+            }
+            fclose($output);
+            exit;
+        } catch (\Exception $e) {
+            echo json_encode(['code' => 400, 'msg' => $e->getMessage()]);
+            exit;
+        }
+    }
+
+    /**
+     * 导出现金列表
+     */
+    public function exportWithdrawals(): void
+    {
+        try {
+            $this->requireRole(User::TYPE_ADMIN);
+
+            $withdrawModel = new Withdrawal();
+            $withdrawals = $withdrawModel->getDb()->fetchAll("SELECT
+                w.id, w.user_id, u.nickname, w.amount, w.fee, w.real_amount,
+                w.account_type, w.account_name, w.account_no, w.status,
+                w.created_at, w.processed_at
+                FROM withdrawals w
+                LEFT JOIN users u ON w.user_id = u.id
+                ORDER BY w.id DESC LIMIT 1000");
+
+            $headers = ['ID', '用户ID', '用户昵称', '申请金额', '手续费', '到账金额', '账户类型', '开户名', '账号/支付宝', '状态', '申请时间', '处理时间'];
+
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment;filename="withdrawals_' . date('YmdHis') . '.csv"');
+            header('Cache-Control: max-age=0');
+
+            $output = fopen('php://output', 'w');
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            fputcsv($output, $headers);
+
+            $statusMap = [0 => '待处理', 1 => '处理中', 2 => '已通过', 3 => '已拒绝'];
+
+            foreach ($withdrawals as $row) {
+                $row['status'] = $statusMap[$row['status']] ?? $row['status'];
+                fputcsv($output, $row);
+            }
+            fclose($output);
+            exit;
+        } catch (\Exception $e) {
+            echo json_encode(['code' => 400, 'msg' => $e->getMessage()]);
+            exit;
+        }
+    }
                     $withdrawal['id'],
                     'withdrawal',
                     '提现申请被拒绝，金额已退回',

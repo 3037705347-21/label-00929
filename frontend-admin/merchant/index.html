@@ -121,6 +121,76 @@
                     </div>
                 </div>
 
+                <!-- 趋势分析图表 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">数据分析</h3>
+                        <div class="card-tools">
+                            <select id="merchantChartPeriod" onchange="reloadMerchantCharts()" style="width: 100px;">
+                                <option value="day">按日</option>
+                                <option value="week" selected>按周</option>
+                                <option value="month">按月</option>
+                            </select>
+                            <button class="btn btn-secondary btn-sm ml-sm" onclick="exportMerchantAnalytics()">📥 导出</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="commissionChart"></canvas>
+                        </div>
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="orderTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROI分析与达人效果对比 -->
+                <div class="grid grid-2 mb-lg">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">任务ROI分析 TOP10</h3>
+                        </div>
+                        <div class="chart-container" style="height: 350px;">
+                            <canvas id="roiChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">达人效果对比 TOP5</h3>
+                        </div>
+                        <div class="chart-container" style="height: 350px;">
+                            <canvas id="influencerCompareChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 佣金支出明细 -->
+                <div class="card mb-lg">
+                    <div class="card-header">
+                        <h3 class="card-title">佣金支出明细</h3>
+                        <button class="btn btn-secondary btn-sm" onclick="exportCommissionDetail()">📥 导出</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>日期</th>
+                                    <th>任务</th>
+                                    <th>达人</th>
+                                    <th>佣金类型</th>
+                                    <th>支出金额</th>
+                                    <th>关联订单</th>
+                                </tr>
+                            </thead>
+                            <tbody id="commissionTable">
+                                <tr>
+                                    <td colspan="6" class="text-center text-secondary">暂无数据</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- 最近任务 -->
                 <div class="card">
                     <div class="card-header">
@@ -235,6 +305,131 @@
             document.querySelector('.sidebar').classList.toggle('open');
             document.getElementById('sidebarOverlay').classList.toggle('show');
         }
+
+        // 商家图表实例存储
+        let merchantCharts = {};
+
+        // 加载商家端所有图表
+        async function loadMerchantCharts() {
+            try {
+                const period = document.getElementById('merchantChartPeriod').value;
+                const res = await get('/merchant/dashboard/analytics', { period });
+
+                if (res.code === 0) {
+                    const { trends, roi_data, influencer_compare, commission_details } = res.data;
+
+                    // 销毁旧图表
+                    Object.values(merchantCharts).forEach(chart => {
+                        if (chart) chart.destroy();
+                    });
+                    merchantCharts = {};
+
+                    // 佣金支出趋势图
+                    if (trends?.commission) {
+                        merchantCharts.commission = await createTrendChart('commissionChart', {
+                            title: '佣金支出趋势',
+                            labels: trends.commission.labels,
+                            datasets: [{
+                                label: '佣金支出(元)',
+                                data: trends.commission.data,
+                                borderColor: chartColors.danger,
+                                backgroundColor: chartColors.dangerBg
+                            }]
+                        });
+                    }
+
+                    // 订单完成趋势图
+                    if (trends?.orders) {
+                        merchantCharts.orderTrend = await createTrendChart('orderTrendChart', {
+                            title: '订单完成趋势',
+                            labels: trends.orders.labels,
+                            datasets: [{
+                                label: '完成订单数',
+                                data: trends.orders.data,
+                                borderColor: chartColors.success,
+                                backgroundColor: chartColors.successBg
+                            }]
+                        });
+                    }
+
+                    // ROI分析图表（任务投入产出比）
+                    if (roi_data) {
+                        merchantCharts.roi = await createTrendChart('roiChart', {
+                            title: '任务ROI分析',
+                            labels: roi_data.labels,
+                            datasets: [{
+                                label: 'ROI(%)',
+                                data: roi_data.data,
+                                borderColor: chartColors.info,
+                                backgroundColor: chartColors.infoBg,
+                                type: 'bar'
+                            }],
+                            type: 'bar'
+                        });
+                    }
+
+                    // 达人效果对比图表
+                    if (influencer_compare) {
+                        merchantCharts.influencerCompare = await createTrendChart('influencerCompareChart', {
+                            title: '达人效果对比',
+                            labels: influencer_compare.labels,
+                            datasets: [
+                                {
+                                    label: '完成订单数',
+                                    data: influencer_compare.order_counts,
+                                    borderColor: chartColors.primary,
+                                    backgroundColor: chartColors.primaryBg
+                                },
+                                {
+                                    label: '平均播放量',
+                                    data: influencer_compare.play_counts,
+                                    borderColor: chartColors.warning,
+                                    backgroundColor: chartColors.warningBg
+                                }
+                            ]
+                        });
+                    }
+
+                    // 渲染佣金支出明细表格
+                    if (commission_details && commission_details.length > 0) {
+                        const tbody = document.getElementById('commissionTable');
+                        tbody.innerHTML = commission_details.map(detail => `
+                            <tr>
+                                <td>${formatDate(detail.date, 'YYYY-MM-DD')}</td>
+                                <td>${detail.task_title || '-'}</td>
+                                <td>${detail.influencer_name || '-'}</td>
+                                <td>${detail.commission_type == 1 ? '固定佣金' : 'CPS分成'}</td>
+                                <td><span class="text-danger">¥${formatMoney(detail.amount)}</span></td>
+                                <td>${detail.order_no || '-'}</td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+            } catch (err) {
+                console.error('Load merchant charts error:', err);
+            }
+        }
+
+        // 切换时间周期重新加载图表
+        function reloadMerchantCharts() {
+            loadMerchantCharts();
+        }
+
+        // 导出商家分析数据
+        async function exportMerchantAnalytics() {
+            const period = document.getElementById('merchantChartPeriod').value;
+            await fetchExportData('/merchant/dashboard/analytics/export', { period }, '商家分析报表_' + new Date().toISOString().slice(0,10));
+        }
+
+        // 导出佣金明细
+        async function exportCommissionDetail() {
+            await fetchExportData('/merchant/commission/export', {}, '佣金支出明细_' + new Date().toISOString().slice(0,10));
+        }
+
+        // 页面加载完成初始化图表
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMerchantCharts();
+        });
     </script>
 </body>
 </html>

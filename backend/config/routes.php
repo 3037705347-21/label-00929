@@ -80,6 +80,14 @@ $router->group('/api/merchant', function($router) {
     // 数据看板
     $router->get('/dashboard', 'MerchantController@dashboard');
     $router->get('/statistics', 'MerchantController@statistics');
+    
+    // 深度分析报表
+    $router->get('/analytics/trend', 'MerchantController@analyticsTrend');
+    $router->get('/analytics/roi', 'MerchantController@analyticsRoi');
+    $router->get('/analytics/influencer-compare', 'MerchantController@influencerCompare');
+    $router->get('/analytics/commission', 'MerchantController@commissionDetail');
+    $router->get('/export/transactions', 'MerchantController@exportTransactions');
+    $router->get('/export/orders', 'MerchantController@exportOrders');
 
     // 财务管理
     $router->get('/wallet', 'MerchantController@wallet');
@@ -127,6 +135,16 @@ $router->group('/api/influencer', function($router) {
 
     // 我的主页/作品集
     $router->get('/portfolio', 'InfluencerController@portfolio');
+    
+    // 达人数据看板
+    $router->get('/dashboard/analytics', 'InfluencerController@dashboardAnalytics');
+    $router->get('/dashboard/analytics/export', 'InfluencerController@dashboardAnalyticsExport');
+    
+    // 达人深度分析报表
+    $router->get('/analytics/trend', 'InfluencerController@analyticsTrend');
+    $router->get('/analytics/content', 'InfluencerController@contentAnalytics');
+    $router->get('/export/orders', 'InfluencerController@exportOrders');
+    $router->get('/export/withdrawals', 'InfluencerController@exportWithdrawals');
 });
 
 // ==================== 管理后台接口 ====================
@@ -193,6 +211,14 @@ $router->group('/api/admin', function($router) {
 
     // 操作日志
     $router->get('/logs', 'AdminController@logList');
+    
+    // 管理端深度分析
+    $router->get('/analytics/gmv', 'AdminController@gmvTrend');
+    $router->get('/analytics/service-fee', 'AdminController@serviceFeeTrend');
+    $router->get('/analytics/conversion-funnel', 'AdminController@conversionFunnel');
+    $router->get('/export/transactions', 'AdminController@exportTransactions');
+    $router->get('/export/orders', 'AdminController@exportOrders');
+    $router->get('/export/withdrawals', 'AdminController@exportWithdrawals');
 });
 
 return $router;
